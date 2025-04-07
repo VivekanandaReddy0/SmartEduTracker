@@ -1,9 +1,6 @@
-import os
-import json
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from datetime import datetime, timedelta
 from flask import current_app
-from app.models import Student, Subject, Mark
+from app.models import Student, Subject, Mark, Attendance
 
 def get_student_data(student_id):
     """
@@ -15,8 +12,8 @@ def get_student_data(student_id):
     if not student:
         return {'error': 'Student not found'}, 404
     
-    # Get attendance data from Google Sheets
-    attendance_data = get_attendance_from_sheets(student.student_id)
+    # Get attendance data from database
+    attendance_data = get_attendance_from_database(student_id)
     
     # Get marks data
     marks_data = get_student_marks(student_id)
@@ -33,44 +30,31 @@ def get_student_data(student_id):
         'marks': marks_data
     }, 200
 
-def get_attendance_from_sheets(student_id):
+def get_attendance_from_database(student_id):
     """
-    Fetch attendance data from Google Sheets
+    Fetch attendance data from database
     This is a helper function for get_student_data
     """
     try:
-        # Set up Google Sheets credentials
-        scope = ['https://spreadsheets.google.com/feeds',
-                 'https://www.googleapis.com/auth/drive']
+        # Get attendance records for the student
+        attendance_records = Attendance.query.filter_by(student_id=student_id).all()
         
-        # Check if credentials are in environment
-        if os.environ.get('GOOGLE_CREDENTIALS'):
-            # Use credentials from environment variable
-            credentials_json = json.loads(os.environ.get('GOOGLE_CREDENTIALS'))
-            credentials = ServiceAccountCredentials.from_json_keyfile_dict(credentials_json, scope)
-        else:
-            # Try to use a local credentials file
-            credentials = ServiceAccountCredentials.from_json_keyfile_name('google_credentials.json', scope)
+        if not attendance_records:
+            return []
         
-        client = gspread.authorize(credentials)
+        attendance_data = []
         
-        # Open the Google Sheet
-        sheet_id = current_app.config['GOOGLE_SHEET_ID']
-        if not sheet_id:
-            return {'error': 'Google Sheet ID not configured'}
+        for record in attendance_records:
+            subject = Subject.query.get(record.subject_id)
+            
+            attendance_data.append({
+                'date': record.date.strftime('%Y-%m-%d'),
+                'subject_code': subject.code,
+                'subject_name': subject.name,
+                'status': 'Present' if record.status else 'Absent'
+            })
         
-        sheet = client.open_by_key(sheet_id)
-        
-        # Assuming the first worksheet contains attendance data
-        attendance_sheet = sheet.get_worksheet(0)
-        
-        # Get all records from the sheet
-        records = attendance_sheet.get_all_records()
-        
-        # Filter records for the specific student
-        student_attendance = [record for record in records if record.get('student_id') == student_id]
-        
-        return student_attendance
+        return attendance_data
     except Exception as e:
         current_app.logger.error(f"Error fetching attendance data: {str(e)}")
         return {'error': str(e)}

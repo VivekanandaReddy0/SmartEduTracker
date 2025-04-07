@@ -1,54 +1,43 @@
 import os
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 from flask import current_app
 from flask_mail import Message
 from app import mail
 from datetime import datetime, timedelta
 import json
-
-def get_google_sheet_client():
-    """
-    Authenticate and return a Google Sheets client
-    """
-    scope = ['https://spreadsheets.google.com/feeds',
-             'https://www.googleapis.com/auth/drive']
-    
-    # Check if credentials are in environment
-    if os.environ.get('GOOGLE_CREDENTIALS'):
-        # Use credentials from environment variable
-        credentials_json = json.loads(os.environ.get('GOOGLE_CREDENTIALS'))
-        credentials = ServiceAccountCredentials.from_json_keyfile_dict(credentials_json, scope)
-    else:
-        # Try to use a local credentials file
-        credentials = ServiceAccountCredentials.from_json_keyfile_name('google_credentials.json', scope)
-    
-    return gspread.authorize(credentials)
+from app.models import Attendance, Subject
 
 def fetch_attendance_data(student_id):
     """
-    Fetch attendance data from Google Sheets for a specific student
+    Fetch attendance data from database for a specific student
     """
     try:
-        client = get_google_sheet_client()
-        sheet_id = current_app.config['GOOGLE_SHEET_ID']
+        from app.models import Student, Attendance, Subject
         
-        if not sheet_id:
-            return {'error': 'Google Sheet ID not configured'}, False
+        # Get the student object from student_id string
+        student = Student.query.filter_by(student_id=student_id).first()
         
-        # Open the Google Sheet
-        sheet = client.open_by_key(sheet_id)
+        if not student:
+            return {'error': 'Student not found'}, False
         
-        # Assuming the first worksheet contains attendance data
-        attendance_sheet = sheet.get_worksheet(0)
+        # Get attendance records for the student
+        attendance_records = Attendance.query.filter_by(student_id=student.id).all()
         
-        # Get all records from the sheet
-        records = attendance_sheet.get_all_records()
+        if not attendance_records:
+            return [], True
         
-        # Filter records for the specific student
-        student_attendance = [record for record in records if record.get('student_id') == student_id]
+        formatted_records = []
         
-        return student_attendance, True
+        for record in attendance_records:
+            subject = Subject.query.get(record.subject_id)
+            
+            formatted_records.append({
+                'date': record.date.strftime('%Y-%m-%d'),
+                'subject': subject.name,
+                'subject_code': subject.code,
+                'status': 'Present' if record.status else 'Absent'
+            })
+        
+        return formatted_records, True
     except Exception as e:
         current_app.logger.error(f"Error fetching attendance data: {str(e)}")
         return {'error': str(e)}, False
