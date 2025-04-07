@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i> Student Dashboard</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('dashboard.index') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                        <a href="{{ url_for('dashboard.profile') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-user me-2"></i> Profile
+                        </a>
+                        <a href="{{ url_for('dashboard.attendance') }}" class="list-group-item list-group-item-action bg-dark text-light active">
+                            <i class="fas fa-calendar-check me-2"></i> Attendance
+                        </a>
+                        <a href="{{ url_for('dashboard.marks') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-graduation-cap me-2"></i> Marks
+                        </a>
+                        <a href="{{ url_for('dashboard.chat') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-comment-dots me-2"></i> AI Chat Assistant
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card bg-dark text-light">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i> Attendance Overview</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Attendance Overview -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-dark text-light mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">Overall Attendance</h5>
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 80px; height: 80px;" class="me-3">
+                                            <canvas id="overallAttendanceChart"></canvas>
+                                        </div>
+                                        <div>
+                                            <h2 class="mb-0">{{ overall_percentage }}%</h2>
+                                            <p class="text-muted mb-0">Present Days</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card bg-dark text-light mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">Attendance by Subject</h5>
+                                    <div style="height: 150px;">
+                                        <canvas id="subjectAttendanceChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Attendance -->
+                    <div class="card bg-dark text-light mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Recent Attendance (Last 30 Days)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div style="height: 200px;">
+                                <canvas id="attendanceHistoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Attendance Table -->
+                    <div class="card bg-dark text-light">
+                        <div class="card-header">
+                            <h5 class="mb-0">Detailed Attendance Record</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Subject</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in attendance_records %}
+                                        <tr>
+                                            <td>{{ record.date }}</td>
+                                            <td>{{ record.subject }} ({{ record.subject_code }})</td>
+                                            <td>
+                                                {% if record.status %}
+                                                <span class="badge bg-success">Present</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">Absent</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Overall attendance pie chart
+        const overallCtx = document.getElementById('overallAttendanceChart').getContext('2d');
+        new Chart(overallCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Present', 'Absent'],
+                datasets: [{
+                    data: [{{ overall_percentage }}, {{ 100 - overall_percentage }}],
+                    backgroundColor: ['#198754', '#dc3545'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+        
+        // Subject attendance chart
+        const subjectLabels = {{ subject_names|tojson }};
+        const subjectData = {{ subject_percentages|tojson }};
+        
+        createSubjectPieChart('subjectAttendanceChart', subjectLabels, subjectData);
+        
+        // Attendance history chart
+        const dates = {{ attendance_dates|tojson }};
+        const presentData = {{ attendance_present|tojson }};
+        const absentData = {{ attendance_absent|tojson }};
+        
+        createAttendanceChart('attendanceHistoryChart', dates, presentData, absentData);
+    });
+</script>
+{% endblock %}

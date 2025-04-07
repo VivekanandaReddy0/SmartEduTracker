@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}AI Chat Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i> Student Dashboard</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('dashboard.index') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                        <a href="{{ url_for('dashboard.profile') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-user me-2"></i> Profile
+                        </a>
+                        <a href="{{ url_for('dashboard.attendance') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-calendar-check me-2"></i> Attendance
+                        </a>
+                        <a href="{{ url_for('dashboard.marks') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-graduation-cap me-2"></i> Marks
+                        </a>
+                        <a href="{{ url_for('dashboard.chat') }}" class="list-group-item list-group-item-action bg-dark text-light active">
+                            <i class="fas fa-comment-dots me-2"></i> AI Chat Assistant
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card bg-dark text-light">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-robot me-2"></i> Educational AI Assistant</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Ask any educational question and our AI assistant will help you! You can ask about subject concepts, homework help, study tips, and more.
+                    </div>
+                    
+                    <div class="chat-container mb-3" id="chatContainer" style="height: 400px; overflow-y: auto; border: 1px solid #444; border-radius: 0.25rem; padding: 1rem;">
+                        <div class="chat-message bot">
+                            <div class="avatar me-2">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-bubble bg-primary text-white p-3 rounded mb-2">
+                                    Hi there! I'm your educational AI assistant. How can I help you with your studies today?
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% for chat in chat_history %}
+                        <div class="chat-message user">
+                            <div class="message-content">
+                                <div class="message-bubble bg-secondary text-white p-3 rounded mb-2 ms-auto" style="max-width: 75%;">
+                                    {{ chat.message }}
+                                </div>
+                                <div class="message-time text-muted small text-end">
+                                    {{ chat.created_at.strftime('%H:%M') }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-message bot">
+                            <div class="avatar me-2">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-bubble bg-primary text-white p-3 rounded mb-2">
+                                    {{ chat.response|safe }}
+                                </div>
+                                <div class="message-time text-muted small">
+                                    {{ chat.created_at.strftime('%H:%M') }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="messageInput" placeholder="Type your question here...">
+                        <button class="btn btn-primary" type="button" id="sendButton">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+{% endblock %}
