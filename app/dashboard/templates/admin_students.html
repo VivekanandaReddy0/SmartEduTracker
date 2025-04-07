@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Students{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-shield me-2"></i> Admin Panel</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('dashboard.index') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                        <a href="{{ url_for('dashboard.admin_students') }}" class="list-group-item list-group-item-action bg-dark text-light active">
+                            <i class="fas fa-user-graduate me-2"></i> Manage Students
+                        </a>
+                        <a href="{{ url_for('dashboard.admin_attendance') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-calendar-check me-2"></i> Attendance
+                        </a>
+                        <a href="{{ url_for('dashboard.admin_announcements') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-bullhorn me-2"></i> Announcements
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card bg-dark text-light">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i> Student Management</h5>
+                    <div class="input-group w-50">
+                        <input type="text" id="studentSearch" class="form-control" placeholder="Search students...">
+                        <button class="btn btn-light" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if students %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover" id="studentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Name</th>
+                                        <th>Program</th>
+                                        <th>Semester</th>
+                                        <th>GPA</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students %}
+                                    <tr>
+                                        <td>{{ student.student_id }}</td>
+                                        <td>{{ student.first_name }} {{ student.last_name }}</td>
+                                        <td>{{ student.program }}</td>
+                                        <td>{{ student.semester }}</td>
+                                        <td>{{ student.gpa }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info view-student" data-id="{{ student.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-primary edit-student" data-id="{{ student.id }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center">No students found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Student Modal -->
+<div class="modal fade" id="viewStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Student Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Personal Information</h5>
+                        <p><strong>Student ID:</strong> <span id="studentViewId"></span></p>
+                        <p><strong>Name:</strong> <span id="studentViewName"></span></p>
+                        <p><strong>Email:</strong> <span id="studentViewEmail"></span></p>
+                        <p><strong>Program:</strong> <span id="studentViewProgram"></span></p>
+                        <p><strong>Semester:</strong> <span id="studentViewSemester"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Academic Information</h5>
+                        <p><strong>GPA:</strong> <span id="studentViewGPA"></span></p>
+                        <p><strong>Registration Date:</strong> <span id="studentViewRegistrationDate"></span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Student Modal -->
+<div class="modal fade" id="editStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Edit Student</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editStudentForm">
+                    <input type="hidden" id="editStudentId">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editFirstName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="editFirstName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editLastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="editLastName" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editProgram" class="form-label">Program</label>
+                            <input type="text" class="form-control" id="editProgram" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editSemester" class="form-label">Semester</label>
+                            <input type="number" class="form-control" id="editSemester" required min="1" max="8">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editGPA" class="form-label">GPA</label>
+                        <input type="number" class="form-control" id="editGPA" required min="0" max="4" step="0.01">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveStudentEdit">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        document.getElementById('studentSearch').addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const table = document.getElementById('studentsTable');
+            const rows = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                let found = false;
+                
+                for (let j = 0; j < cells.length; j++) {
+                    const cellText = cells[j].textContent.toLowerCase();
+                    if (cellText.indexOf(searchTerm) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                row.style.display = found ? '' : 'none';
+            }
+        });
+        
+        // View student functionality
+        document.querySelectorAll('.view-student').forEach(button => {
+            button.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-id');
+                
+                // In a real application, you would fetch student details from the server here
+                // For now, we'll just populate with dummy data from the table
+                const row = this.closest('tr');
+                const cells = row.getElementsByTagName('td');
+                
+                document.getElementById('studentViewId').textContent = cells[0].textContent;
+                document.getElementById('studentViewName').textContent = cells[1].textContent;
+                document.getElementById('studentViewEmail').textContent = 'student@example.com'; // Dummy data
+                document.getElementById('studentViewProgram').textContent = cells[2].textContent;
+                document.getElementById('studentViewSemester').textContent = cells[3].textContent;
+                document.getElementById('studentViewGPA').textContent = cells[4].textContent;
+                document.getElementById('studentViewRegistrationDate').textContent = 'Jan 1, 2023'; // Dummy data
+                
+                const modal = new bootstrap.Modal(document.getElementById('viewStudentModal'));
+                modal.show();
+            });
+        });
+        
+        // Edit student functionality
+        document.querySelectorAll('.edit-student').forEach(button => {
+            button.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-id');
+                
+                // In a real application, you would fetch student details from the server here
+                // For now, we'll just populate with dummy data from the table
+                const row = this.closest('tr');
+                const cells = row.getElementsByTagName('td');
+                
+                document.getElementById('editStudentId').value = studentId;
+                const fullName = cells[1].textContent.split(' ');
+                document.getElementById('editFirstName').value = fullName[0];
+                document.getElementById('editLastName').value = fullName[1];
+                document.getElementById('editProgram').value = cells[2].textContent;
+                document.getElementById('editSemester').value = cells[3].textContent;
+                document.getElementById('editGPA').value = cells[4].textContent;
+                
+                const modal = new bootstrap.Modal(document.getElementById('editStudentModal'));
+                modal.show();
+            });
+        });
+        
+        // Save student edit functionality
+        document.getElementById('saveStudentEdit').addEventListener('click', function() {
+            const studentId = document.getElementById('editStudentId').value;
+            const firstName = document.getElementById('editFirstName').value;
+            const lastName = document.getElementById('editLastName').value;
+            const program = document.getElementById('editProgram').value;
+            const semester = document.getElementById('editSemester').value;
+            const gpa = document.getElementById('editGPA').value;
+            
+            if (!firstName || !lastName || !program || !semester || !gpa) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // In a real application, you would send this data to the server
+            alert('Student information updated successfully!');
+            
+            // Close modal and reload page
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
+            modal.hide();
+            location.reload();
+        });
+    });
+</script>
+{% endblock %}

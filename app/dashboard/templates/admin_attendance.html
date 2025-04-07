@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-shield me-2"></i> Admin Panel</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('dashboard.index') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                        <a href="{{ url_for('dashboard.admin_students') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-user-graduate me-2"></i> Manage Students
+                        </a>
+                        <a href="{{ url_for('dashboard.admin_attendance') }}" class="list-group-item list-group-item-action bg-dark text-light active">
+                            <i class="fas fa-calendar-check me-2"></i> Attendance
+                        </a>
+                        <a href="{{ url_for('dashboard.admin_announcements') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-bullhorn me-2"></i> Announcements
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <!-- Low Attendance Students -->
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Low Attendance Students</h5>
+                    <button id="sendAlertBtn" class="btn btn-warning">
+                        <i class="fas fa-bell me-2"></i> Send Alerts
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if low_attendance_students %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="selectAllCheckbox"></th>
+                                        <th>Student ID</th>
+                                        <th>Name</th>
+                                        <th>Program</th>
+                                        <th>Attendance %</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in low_attendance_students %}
+                                    <tr>
+                                        <td><input type="checkbox" class="student-checkbox" data-id="{{ item.student.id }}"></td>
+                                        <td>{{ item.student.student_id }}</td>
+                                        <td>{{ item.student.first_name }} {{ item.student.last_name }}</td>
+                                        <td>{{ item.student.program }}</td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger" role="progressbar" style="width: {{ item.attendance }}%;" aria-valuenow="{{ item.attendance }}" aria-valuemin="0" aria-valuemax="100">{{ item.attendance|round(1) }}%</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info view-attendance" data-id="{{ item.student.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center">No students with low attendance found.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Attendance Records -->
+            <div class="card bg-dark text-light">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> Attendance Records</h5>
+                    <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addAttendanceModal">
+                        <i class="fas fa-plus me-2"></i> Add Record
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="studentFilter" class="form-label">Student</label>
+                            <select class="form-select" id="studentFilter">
+                                <option value="">All Students</option>
+                                {% for student in students %}
+                                <option value="{{ student.id }}">{{ student.first_name }} {{ student.last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="dateFilter" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="dateFilter">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="statusFilter" class="form-label">Status</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All</option>
+                                <option value="present">Present</option>
+                                <option value="absent">Absent</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover" id="attendanceTable">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Subject</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- This would be populated with actual attendance records in a real implementation -->
+                                <tr>
+                                    <td colspan="5" class="text-center">Use the filters above to search for attendance records.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Attendance Modal -->
+<div class="modal fade" id="addAttendanceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add Attendance Record</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addAttendanceForm">
+                    <div class="mb-3">
+                        <label for="addAttendanceStudent" class="form-label">Student</label>
+                        <select class="form-select" id="addAttendanceStudent" required>
+                            <option value="">Select Student</option>
+                            {% for student in students %}
+                            <option value="{{ student.id }}">{{ student.first_name }} {{ student.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addAttendanceSubject" class="form-label">Subject</label>
+                        <select class="form-select" id="addAttendanceSubject" required>
+                            <option value="">Select Subject</option>
+                            <!-- This would be populated with subjects from the database -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addAttendanceDate" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="addAttendanceDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="addAttendanceStatus" id="statusPresent" value="present" checked>
+                            <label class="form-check-label" for="statusPresent">
+                                Present
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="addAttendanceStatus" id="statusAbsent" value="absent">
+                            <label class="form-check-label" for="statusAbsent">
+                                Absent
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveAttendance">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Attendance Modal -->
+<div class="modal fade" id="viewAttendanceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Student Attendance Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="viewAttendanceStudentName"></h5>
+                <div class="mb-3">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Student ID:</strong> <span id="viewAttendanceStudentId"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Program:</strong> <span id="viewAttendanceProgram"></span></p>
+                        </div>
+                    </div>
+                </div>
+                <h6>Attendance Summary</h6>
+                <div class="progress mb-3">
+                    <div class="progress-bar" id="viewAttendanceProgress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Present</th>
+                                <th>Absent</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="viewAttendanceTable">
+                            <!-- This would be populated with attendance details in a real implementation -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Select all checkbox functionality
+        document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+        
+        // Send alerts functionality
+        document.getElementById('sendAlertBtn').addEventListener('click', function() {
+            const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                alert('Please select at least one student');
+                return;
+            }
+            
+            const studentIds = Array.from(selectedCheckboxes).map(checkbox => checkbox.getAttribute('data-id'));
+            
+            fetch('{{ url_for("dashboard.admin_send_alerts") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ student_ids: studentIds }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        });
+        
+        // View attendance functionality
+        document.querySelectorAll('.view-attendance').forEach(button => {
+            button.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-id');
+                
+                // In a real application, you would fetch attendance data from the server here
+                // For now, we'll just populate with dummy data from the table
+                const row = this.closest('tr');
+                const cells = row.getElementsByTagName('td');
+                
+                document.getElementById('viewAttendanceStudentName').textContent = cells[2].textContent;
+                document.getElementById('viewAttendanceStudentId').textContent = cells[1].textContent;
+                document.getElementById('viewAttendanceProgram').textContent = cells[3].textContent;
+                
+                const attendancePercent = parseFloat(cells[4].querySelector('.progress-bar').getAttribute('aria-valuenow'));
+                const progressBar = document.getElementById('viewAttendanceProgress');
+                progressBar.style.width = attendancePercent + '%';
+                progressBar.textContent = attendancePercent.toFixed(1) + '%';
+                
+                if (attendancePercent < 60) {
+                    progressBar.classList.add('bg-danger');
+                    progressBar.classList.remove('bg-warning', 'bg-success');
+                } else if (attendancePercent < 75) {
+                    progressBar.classList.add('bg-warning');
+                    progressBar.classList.remove('bg-danger', 'bg-success');
+                } else {
+                    progressBar.classList.add('bg-success');
+                    progressBar.classList.remove('bg-danger', 'bg-warning');
+                }
+                
+                // Populate the attendance table
+                const tableBody = document.getElementById('viewAttendanceTable');
+                tableBody.innerHTML = '';
+                
+                // In a real application, you would fetch and display subject-wise attendance
+                const dummySubjects = ['Mathematics', 'Physics', 'Computer Science'];
+                dummySubjects.forEach(subject => {
+                    const subjectPercent = Math.floor(Math.random() * (100 - 60) + 60);
+                    const present = Math.floor(Math.random() * 20) + 10;
+                    const absent = Math.floor(present * (100 - subjectPercent) / subjectPercent);
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${subject}</td>
+                        <td>${present}</td>
+                        <td>${absent}</td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar ${subjectPercent < 75 ? 'bg-warning' : 'bg-success'}" role="progressbar" 
+                                     style="width: ${subjectPercent}%;" aria-valuenow="${subjectPercent}" 
+                                     aria-valuemin="0" aria-valuemax="100">${subjectPercent}%</div>
+                            </div>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+                const modal = new bootstrap.Modal(document.getElementById('viewAttendanceModal'));
+                modal.show();
+            });
+        });
+        
+        // Save attendance functionality
+        document.getElementById('saveAttendance').addEventListener('click', function() {
+            const studentId = document.getElementById('addAttendanceStudent').value;
+            const subjectId = document.getElementById('addAttendanceSubject').value;
+            const date = document.getElementById('addAttendanceDate').value;
+            const status = document.querySelector('input[name="addAttendanceStatus"]:checked').value;
+            
+            if (!studentId || !subjectId || !date) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // In a real application, you would send this data to the server
+            alert('Attendance record added successfully!');
+            
+            // Close modal and reload page
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addAttendanceModal'));
+            modal.hide();
+            location.reload();
+        });
+    });
+</script>
+{% endblock %}

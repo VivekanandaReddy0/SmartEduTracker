@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-shield me-2"></i> Admin Panel</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('dashboard.index') }}" class="list-group-item list-group-item-action bg-dark text-light active">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                        <a href="{{ url_for('dashboard.admin_students') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-user-graduate me-2"></i> Manage Students
+                        </a>
+                        <a href="{{ url_for('dashboard.admin_attendance') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-calendar-check me-2"></i> Attendance
+                        </a>
+                        <a href="{{ url_for('dashboard.admin_announcements') }}" class="list-group-item list-group-item-action bg-dark text-light">
+                            <i class="fas fa-bullhorn me-2"></i> Announcements
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card bg-primary text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="card-title">Total Students</h5>
+                                    <h2 class="display-4">{{ students_count }}</h2>
+                                </div>
+                                <i class="fas fa-user-graduate fa-3x"></i>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex align-items-center justify-content-between">
+                            <a href="{{ url_for('dashboard.admin_students') }}" class="text-white">View Students</a>
+                            <i class="fas fa-angle-right"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="card bg-warning text-dark h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="card-title">Low Attendance</h5>
+                                    <h2 class="display-4">{{ low_attendance_count }}</h2>
+                                </div>
+                                <i class="fas fa-exclamation-triangle fa-3x"></i>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex align-items-center justify-content-between">
+                            <a href="{{ url_for('dashboard.admin_attendance') }}" class="text-dark">View Attendance</a>
+                            <i class="fas fa-angle-right"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="card bg-success text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="card-title">Announcements</h5>
+                                    <h2 class="display-4">{{ announcements|length }}</h2>
+                                </div>
+                                <i class="fas fa-bullhorn fa-3x"></i>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex align-items-center justify-content-between">
+                            <a href="{{ url_for('dashboard.admin_announcements') }}" class="text-white">Manage Announcements</a>
+                            <i class="fas fa-angle-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Announcements -->
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-bullhorn me-2"></i> Recent Announcements</h5>
+                    <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#addAnnouncementModal">
+                        <i class="fas fa-plus"></i> Add New
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if announcements %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for announcement in announcements %}
+                                    <tr>
+                                        <td>{{ announcement.title }}</td>
+                                        <td>{{ announcement.created_at.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info view-announcement" data-title="{{ announcement.title }}" data-content="{{ announcement.content }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center">No announcements found.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Student Attendance Overview -->
+            <div class="card bg-dark text-light">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i> Attendance Overview</h5>
+                </div>
+                <div class="card-body">
+                    <p>Students with attendance below 75%: <strong>{{ low_attendance_count }}</strong></p>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard.admin_attendance') }}" class="btn btn-primary">
+                            <i class="fas fa-calendar-check me-2"></i> Manage Attendance
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Announcement Modal -->
+<div class="modal fade" id="addAnnouncementModal" tabindex="-1" aria-labelledby="addAnnouncementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addAnnouncementModalLabel">Add New Announcement</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="announcementForm">
+                    <div class="mb-3">
+                        <label for="announcementTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="announcementTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="announcementContent" class="form-label">Content</label>
+                        <textarea class="form-control" id="announcementContent" rows="5" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveAnnouncement">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Announcement Modal -->
+<div class="modal fade" id="viewAnnouncementModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="viewAnnouncementTitle"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="viewAnnouncementContent"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle announcement form submission
+        document.getElementById('saveAnnouncement').addEventListener('click', function() {
+            const title = document.getElementById('announcementTitle').value;
+            const content = document.getElementById('announcementContent').value;
+            
+            if (!title || !content) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            fetch('{{ url_for("dashboard.admin_add_announcement") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title, content }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Announcement added successfully');
+                    // Close modal and reload page
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addAnnouncementModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        });
+        
+        // Handle viewing announcement
+        document.querySelectorAll('.view-announcement').forEach(button => {
+            button.addEventListener('click', function() {
+                const title = this.getAttribute('data-title');
+                const content = this.getAttribute('data-content');
+                
+                document.getElementById('viewAnnouncementTitle').textContent = title;
+                document.getElementById('viewAnnouncementContent').textContent = content;
+                
+                const modal = new bootstrap.Modal(document.getElementById('viewAnnouncementModal'));
+                modal.show();
+            });
+        });
+    });
+</script>
+{% endblock %}
