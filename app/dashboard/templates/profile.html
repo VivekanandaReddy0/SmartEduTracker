@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-user me-2"></i>Student Profile</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <!-- User Avatar -->
+                        <div class="mb-3">
+                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                <i class="fas fa-user-graduate fa-3x"></i>
+                            </div>
+                        </div>
+                        <h5 class="mb-0 fw-bold">{{ student.first_name }} {{ student.last_name }}</h5>
+                        <p class="text-muted mb-0">{{ student.program }}</p>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col-5 text-muted">Student ID:</div>
+                            <div class="col-7 fw-bold">{{ student.student_id }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col-5 text-muted">Email:</div>
+                            <div class="col-7">{{ student.user.email }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col-5 text-muted">Current GPA:</div>
+                            <div class="col-7 fw-bold">{{ "%.2f"|format(student.gpa) }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col-5 text-muted">Semester:</div>
+                            <div class="col-7">{{ student.semester }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col-5 text-muted">Joined:</div>
+                            <div class="col-7">{{ student.user.created_at.strftime('%B %d, %Y') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Stats Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-chart-pie me-2"></i>Quick Stats</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h4 class="fw-bold text-primary">{{ "%.2f"|format(student.gpa) }}</h4>
+                            <div class="text-muted">GPA</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h4 class="fw-bold text-primary">{{ student.semester }}</h4>
+                            <div class="text-muted">Semester</div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="fw-bold text-primary">
+                                {% if marks %}
+                                    {{ marks|length }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </h4>
+                            <div class="text-muted">Subjects</div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="fw-bold text-primary">
+                                {% set aPlus = marks|selectattr('grade', 'eq', 'A')|list|length %}
+                                {{ aPlus }}
+                            </h4>
+                            <div class="text-muted">A Grades</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <!-- Academic Performance Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-graduation-cap me-2"></i>Academic Performance</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <canvas id="gradesChart" width="100%" height="50"></canvas>
+                    </div>
+                    
+                    {% if marks %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Quiz</th>
+                                        <th>Midterm</th>
+                                        <th>Final</th>
+                                        <th>Total</th>
+                                        <th>Grade</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mark in marks %}
+                                        <tr>
+                                            <td>{{ mark.subject.name }}</td>
+                                            <td>{{ mark.quiz_marks }}</td>
+                                            <td>{{ mark.midterm_marks }}</td>
+                                            <td>{{ mark.final_marks }}</td>
+                                            <td>{{ mark.total_marks }}</td>
+                                            <td>
+                                                {% if mark.grade == 'A' %}
+                                                    <span class="badge bg-success">{{ mark.grade }}</span>
+                                                {% elif mark.grade == 'B' %}
+                                                    <span class="badge bg-primary">{{ mark.grade }}</span>
+                                                {% elif mark.grade == 'C' %}
+                                                    <span class="badge bg-warning">{{ mark.grade }}</span>
+                                                {% elif mark.grade == 'D' %}
+                                                    <span class="badge bg-warning text-dark">{{ mark.grade }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">{{ mark.grade }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No marks data available.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Skills Assessment Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-tasks me-2"></i>Skills Assessment</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        Based on your academic performance, here's an assessment of your skills in different areas:
+                    </p>
+                    
+                    <!-- Skill Bars -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Critical Thinking</span>
+                            <span>85%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 85%;" 
+                                aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Problem Solving</span>
+                            <span>78%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 78%;" 
+                                aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Research Skills</span>
+                            <span>72%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 72%;" 
+                                aria-valuenow="72" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Communication</span>
+                            <span>90%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 90%;" 
+                                aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Technical Skills</span>
+                            <span>82%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 82%;" 
+                                aria-valuenow="82" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Grades Chart
+    var ctx = document.getElementById('gradesChart').getContext('2d');
+    var gradesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for mark in marks %}
+                    '{{ mark.subject.name }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Total Marks',
+                data: [
+                    {% for mark in marks %}
+                        {{ mark.total_marks }},
+                    {% endfor %}
+                ],
+                backgroundColor: '#4e73df',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

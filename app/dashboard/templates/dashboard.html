@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Welcome Banner -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body py-4">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="fas fa-user-graduate fa-3x"></i>
+                        </div>
+                        <div class="col">
+                            <h3 class="mb-0">Welcome, {{ student.first_name }} {{ student.last_name }}</h3>
+                            <p class="mb-0">{{ student.program }} | Semester {{ student.semester }} | ID: {{ student.student_id }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Attendance Summary Card -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-calendar-check me-2"></i>Attendance Overview</h6>
+                    <a href="{{ url_for('dashboard.attendance') }}" class="btn btn-sm btn-primary">View Details</a>
+                </div>
+                <div class="card-body">
+                    {% if attendance_stats and 'overall' in attendance_stats %}
+                        <div class="mb-4">
+                            <h5>Overall Attendance</h5>
+                            <div class="progress" style="height: 25px;">
+                                {% set attendance_percentage = attendance_stats.overall.percentage %}
+                                {% set color_class = 'bg-danger' if attendance_percentage < 75 else 'bg-success' %}
+                                <div class="progress-bar {{ color_class }}" role="progressbar" 
+                                    style="width: {{ attendance_percentage }}%;" 
+                                    aria-valuenow="{{ attendance_percentage }}" 
+                                    aria-valuemin="0" 
+                                    aria-valuemax="100">
+                                    {{ "%.2f"|format(attendance_percentage) }}%
+                                </div>
+                            </div>
+                            <div class="small mt-2 text-muted text-end">
+                                {{ attendance_stats.overall.present }} / {{ attendance_stats.overall.total }} Classes Attended
+                            </div>
+                        </div>
+                        
+                        {% if attendance_stats.subjects %}
+                            <h5>Subject-wise Attendance</h5>
+                            {% for subject, data in attendance_stats.subjects.items() %}
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>{{ subject }}</span>
+                                        <span>{{ "%.2f"|format(data.percentage) }}%</span>
+                                    </div>
+                                    <div class="progress" style="height: 10px;">
+                                        {% set color_class = 'bg-danger' if data.percentage < 75 else 'bg-success' %}
+                                        <div class="progress-bar {{ color_class }}" role="progressbar" 
+                                            style="width: {{ data.percentage }}%;" 
+                                            aria-valuenow="{{ data.percentage }}" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>No attendance data available.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- GPA & Marks Card -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-chart-line me-2"></i>Academic Performance</h6>
+                    <a href="{{ url_for('dashboard.marks') }}" class="btn btn-sm btn-primary">View Details</a>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center mb-4">
+                        <div class="col-md-6 text-center">
+                            <h5>Current GPA</h5>
+                            <div class="display-4 fw-bold text-primary">{{ "%.2f"|format(student.gpa) }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="gpaChart" width="200" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                    {% if marks %}
+                        <h5>Recent Subject Marks</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Total</th>
+                                        <th>Grade</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mark in marks[:5] %}
+                                        <tr>
+                                            <td>{{ mark.subject.name }}</td>
+                                            <td>{{ mark.total_marks }}</td>
+                                            <td>
+                                                {% if mark.grade == 'A' %}
+                                                    <span class="badge bg-success">{{ mark.grade }}</span>
+                                                {% elif mark.grade == 'B' %}
+                                                    <span class="badge bg-primary">{{ mark.grade }}</span>
+                                                {% elif mark.grade == 'C' %}
+                                                    <span class="badge bg-warning">{{ mark.grade }}</span>
+                                                {% elif mark.grade == 'D' %}
+                                                    <span class="badge bg-warning text-dark">{{ mark.grade }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">{{ mark.grade }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No marks data available.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Announcements Card -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-bullhorn me-2"></i>Announcements</h6>
+                </div>
+                <div class="card-body">
+                    {% if announcements %}
+                        {% for announcement in announcements %}
+                            <div class="announcement mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                                <h5 class="fw-bold">{{ announcement.title }}</h5>
+                                <p>{{ announcement.content }}</p>
+                                <div class="small text-muted">
+                                    Posted by {{ announcement.admin.first_name }} {{ announcement.admin.last_name }} 
+                                    on {{ announcement.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>No announcements available.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Links Card -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-link me-2"></i>Quick Links</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{{ url_for('dashboard.profile') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-user me-2"></i>View Profile
+                        </a>
+                        <a href="{{ url_for('dashboard.attendance') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-calendar-check me-2"></i>Detailed Attendance
+                        </a>
+                        <a href="{{ url_for('dashboard.marks') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-chart-bar me-2"></i>Detailed Marks
+                        </a>
+                        <a href="{{ url_for('dashboard.chat') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-robot me-2"></i>AI Assistant
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Assistant Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-robot me-2"></i>Ask AI Assistant</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Need help with anything? Ask our AI assistant!</p>
+                    <div class="d-grid">
+                        <a href="{{ url_for('dashboard.chat') }}" class="btn btn-primary">
+                            <i class="fas fa-comments me-2"></i>Start Chatting
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // GPA Chart
+    var ctx = document.getElementById('gpaChart').getContext('2d');
+    var gpaChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Current GPA', 'Remaining'],
+            datasets: [{
+                data: [{{ student.gpa }}, {{ 4.0 - student.gpa }}],
+                backgroundColor: [
+                    '#4e73df',
+                    '#f8f9fc'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}
