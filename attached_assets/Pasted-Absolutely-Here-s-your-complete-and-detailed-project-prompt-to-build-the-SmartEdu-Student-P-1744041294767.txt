@@ -1,0 +1,208 @@
+Absolutely! Here's your **complete and detailed project prompt** to build the **SmartEdu - Student Portal Web App** on **Replit**. This version is specifically written for working **end-to-end on Replit**, with all key files, structure, and technologies clearly defined.
+
+---
+
+## 🚀 Project Title: SmartEdu – Student Portal Web App (Replit Edition)
+
+### 🎯 Project Goal:
+Build a **full-stack student portal** using **Python (Flask)** for backend and **HTML + Tailwind CSS + JavaScript** for frontend. It will:
+- Show **attendance data** (from Google Sheets)
+- Display **GPA, marks, and student profile**
+- Feature an **AI chatbot assistant**
+- Provide an **admin panel**
+- Include **email alerts**, **dark mode**, **JWT-based login**, and more.
+
+---
+
+## 🛠 Tech Stack (for Replit):
+- **Python 3.10+**
+- **Flask** (with Blueprints)
+- **Flask-SQLAlchemy**, **Flask-Login**, **Flask-Mail**
+- **Google Sheets API**
+- **OpenAI-compatible Free AI API** (for chatbot)
+- **Tailwind CSS via CDN**
+- **Font Awesome**
+- **JavaScript (frontend logic & dark mode toggle)**
+
+---
+
+## 📁 Folder & File Structure (Replit Setup)
+```plaintext
+smartedu/
+├── app/
+│   ├── __init__.py
+│   ├── models.py
+│   ├── config.py
+│   ├── auth/               # User authentication
+│   │   ├── routes.py
+│   │   ├── forms.py
+│   │   └── templates/
+│   ├── dashboard/          # Dashboard logic & routes
+│   │   ├── routes.py
+│   │   ├── data_service.py
+│   │   └── templates/
+│   ├── templates/          # Shared HTML templates
+│   ├── static/
+│   │   ├── css/
+│   │   └── js/
+│   ├── chatbot/            # Chatbot logic
+│   │   └── assistant.py
+│   ├── utils.py
+├── .env                    # Secrets (API keys, etc.)
+├── requirements.txt
+├── run.py
+├── README.md
+```
+
+---
+
+## 👤 User Roles:
+
+### Student:
+- Login and view dashboard
+- View attendance, GPA, marks, notifications
+- Use AI assistant
+- Receive email alerts for low attendance
+
+### Admin:
+- Login securely
+- Upload attendance (via Google Sheets)
+- Send bulk announcements
+- Manage student profiles
+
+---
+
+## ✅ Features Breakdown
+
+### 🔐 1. Login System (JWT + Flask-Login)
+- Secure student/admin login
+- Use hashed passwords and session-based auth
+- Store JWT in cookies or localStorage
+
+### 📊 2. Attendance Dashboard
+- Read attendance data from Google Sheets
+- Use Google Sheets API (OAuth or Service Account)
+- Render subject-wise & total attendance
+- Alert if <75%
+
+### 📈 3. Graphs & Analytics
+- Show attendance trends using **Chart.js**
+- Weekly/monthly breakdown
+
+### 👨‍🏫 4. Profile Page
+- Student name, ID, photo, GPA, subjects
+- Editable fields (admin-only)
+
+### ✉️ 5. Email Alerts (Flask-Mail)
+- Notify students if attendance is low
+- Config via Gmail SMTP
+
+### 🌙 6. Dark Mode Toggle
+- Use JavaScript to switch themes
+- Store theme in `localStorage`
+
+### 🤖 7. AI Chatbot
+- Use Python-based assistant with free API (e.g., OpenAI/Gemini)
+- Maintain context for each student
+- Frontend chat bubble + backend response route
+
+### 🧑‍💼 8. Admin Panel
+- Add/edit/delete students
+- Upload CSV or update Google Sheet manually
+- Post announcements
+
+---
+
+## 🧪 Setup Instructions (Replit):
+
+### 🔹 Step 1: Install Replit Packages
+In Replit's `packages` tab, install:
+```plaintext
+flask
+flask-login
+flask-sqlalchemy
+flask-mail
+python-dotenv
+requests
+openai (or other free AI API)
+gspread
+oauth2client
+```
+
+### 🔹 Step 2: Set Up `.env`
+Create `.env` file:
+```dotenv
+SECRET_KEY=your-secret-key
+GOOGLE_SHEET_ID=your-sheet-id
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+AI_API_KEY=your-openai-or-other-api-key
+```
+
+### 🔹 Step 3: Enable Tailwind + Font Awesome
+In HTML templates, use CDN:
+```html
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+```
+
+---
+
+## 🧠 AI Assistant Example (Backend):
+```python
+# app/chatbot/assistant.py
+import requests
+import os
+
+def get_ai_response(message, history=[]):
+    headers = {
+        "Authorization": f"Bearer {os.getenv('AI_API_KEY')}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": "gpt-3.5-turbo",  # or Gemini, etc.
+        "messages": history + [{"role": "user", "content": message}]
+    }
+    response = requests.post("https://api.openai.com/v1/chat/completions", json=data, headers=headers)
+    return response.json()['choices'][0]['message']['content']
+```
+
+---
+
+## 💌 Email Alert Setup:
+```python
+# In Flask config
+MAIL_SERVER='smtp.gmail.com'
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USERNAME=os.getenv('EMAIL_USER')
+MAIL_PASSWORD=os.getenv('EMAIL_PASS')
+```
+
+---
+
+## 🚀 Run Command in Replit:
+```bash
+python run.py
+```
+Or click the “Run” button after setting `run.py` as the main file.
+
+---
+
+## 📄 Example `run.py`
+```python
+from app import create_app
+
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+---
+
+If you want, I can now generate the actual folder structure and starter files (with working Flask code) so you can copy-paste directly into Replit.
+
+Would you like me to do that now?
