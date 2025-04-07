@@ -229,6 +229,126 @@ def admin_attendance():
         low_attendance_students=low_attendance_students
     )
 
+@dashboard_bp.route('/admin/sync_attendance', methods=['GET', 'POST'])
+@login_required
+def admin_sync_attendance():
+    if current_user.role != 'admin':
+        flash('You do not have permission to access this page', 'danger')
+        return redirect(url_for('dashboard.index'))
+    
+    if request.method == 'POST':
+        from app.google_sheets_utils import sync_attendance_to_database
+        import os
+        
+        spreadsheet_id = os.environ.get('ATTENDANCE_SPREADSHEET_ID', '')
+        
+        if not spreadsheet_id:
+            if request.is_json:
+                return jsonify({'success': False, 'message': 'Spreadsheet ID not configured'}), 400
+            flash('Google Sheets spreadsheet ID not configured', 'danger')
+            return redirect(url_for('dashboard.admin_attendance'))
+        
+        success, message = sync_attendance_to_database(spreadsheet_id)
+        
+        if request.is_json:
+            return jsonify({'success': success, 'message': message})
+        
+        if success:
+            flash(message, 'success')
+        else:
+            flash(f'Error: {message}', 'danger')
+            
+        return redirect(url_for('dashboard.admin_attendance'))
+    
+    # GET request - show the sync page
+    import os
+    spreadsheet_id = os.environ.get('ATTENDANCE_SPREADSHEET_ID', '')
+    
+    return render_template(
+        'admin_sync_attendance.html',
+        title='Sync Attendance Data',
+        spreadsheet_id=spreadsheet_id
+    )
+
+@dashboard_bp.route('/admin/set_spreadsheet_id', methods=['POST'])
+@login_required
+def admin_set_spreadsheet_id():
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    spreadsheet_id = data.get('spreadsheet_id', '').strip()
+    
+    if not spreadsheet_id:
+        return jsonify({'success': False, 'message': 'Spreadsheet ID is required'}), 400
+    
+    # In a real production application, we would store this in the database
+    # or in environment variables that persist between app restarts
+    # For this demo, we'll use an environment variable that lasts for the current session
+    import os
+    os.environ['ATTENDANCE_SPREADSHEET_ID'] = spreadsheet_id
+    
+    return jsonify({
+        'success': True,
+        'message': 'Spreadsheet ID set successfully'
+    })
+
+@dashboard_bp.route('/admin/test_sheets_connection', methods=['POST'])
+@login_required
+def admin_test_sheets_connection():
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    from app.google_sheets_utils import get_google_sheets_client
+    import os
+    
+    try:
+        # Get the Google Sheets client
+        client = get_google_sheets_client()
+        
+        if not client:
+            return jsonify({
+                'success': False,
+                'message': 'Failed to create Google Sheets client. Check your credentials.'
+            }), 400
+            
+        # Get the spreadsheet ID
+        spreadsheet_id = os.environ.get('ATTENDANCE_SPREADSHEET_ID', '')
+        
+        if not spreadsheet_id:
+            return jsonify({
+                'success': False,
+                'message': 'Spreadsheet ID not configured'
+            }), 400
+            
+        # Try to open the spreadsheet
+        spreadsheet = client.open_by_key(spreadsheet_id)
+        
+        # Get the list of worksheets
+        worksheets = spreadsheet.worksheets()
+        worksheet_names = [ws.title for ws in worksheets]
+        
+        # Check if required sheets exist
+        has_attendance_sheet = 'Attendance' in worksheet_names
+        has_subjects_sheet = 'Subjects' in worksheet_names
+        
+        return jsonify({
+            'success': True,
+            'message': 'Successfully connected to Google Sheets',
+            'spreadsheet_title': spreadsheet.title,
+            'worksheets': worksheet_names,
+            'has_attendance_sheet': has_attendance_sheet,
+            'has_subjects_sheet': has_subjects_sheet
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error testing Google Sheets connection: {str(e)}")
+        
+        return jsonify({
+            'success': False,
+            'message': f'Error connecting to Google Sheets: {str(e)}'
+        }), 500
+
 @dashboard_bp.route('/admin/send_alerts', methods=['POST'])
 @login_required
 def admin_send_alerts():

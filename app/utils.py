@@ -6,9 +6,75 @@ from datetime import datetime, timedelta
 import json
 from app.models import Attendance, Subject
 
-def fetch_attendance_data(student_id):
+# Configuration for Google Sheets
+SPREADSHEET_ID = os.environ.get('ATTENDANCE_SPREADSHEET_ID', '')
+USE_GOOGLE_SHEETS = bool(SPREADSHEET_ID)
+
+def fetch_attendance_from_google_sheets(student_id):
     """
-    Fetch attendance data from database for a specific student
+    Fetch attendance data from Google Sheets for a specific student
+    
+    Args:
+        student_id (str): The student ID
+        
+    Returns:
+        tuple: (attendance_data, success)
+    """
+    try:
+        from app.google_sheets_utils import get_attendance_from_sheets
+        
+        if not SPREADSHEET_ID:
+            current_app.logger.error("ATTENDANCE_SPREADSHEET_ID not set")
+            return {'error': 'Google Sheets spreadsheet ID not configured'}, False
+            
+        # Get all attendance records from the sheet
+        all_records = get_attendance_from_sheets(SPREADSHEET_ID)
+        
+        if all_records is None:
+            return {'error': 'Failed to get data from Google Sheets'}, False
+            
+        if not all_records:
+            return [], True
+            
+        # Filter records for the specific student
+        student_records = [
+            {
+                'date': record['date'],
+                'subject_code': record['subject_code'],
+                'subject': record['subject_code'],  # Placeholder, will be updated if subject info available
+                'status': 'Present' if record['status'] else 'Absent'
+            }
+            for record in all_records if record['student_id'] == student_id
+        ]
+        
+        # Try to get subject names from database
+        try:
+            from app.models import Subject
+            
+            for record in student_records:
+                subject = Subject.query.filter_by(code=record['subject_code']).first()
+                if subject:
+                    record['subject'] = subject.name
+        except Exception as e:
+            current_app.logger.warning(f"Could not get subject names from database: {str(e)}")
+            
+        return student_records, True
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching attendance from Google Sheets: {str(e)}")
+        return {'error': str(e)}, False
+
+def fetch_attendance_data(student_id, use_google_sheets=None):
+    """
+    Fetch attendance data from database or Google Sheets for a specific student
+    
+    Args:
+        student_id (str): The student ID
+        use_google_sheets (bool, optional): Whether to use Google Sheets. 
+                                         If None, falls back to USE_GOOGLE_SHEETS config
+                                         
+    Returns:
+        tuple: (attendance_data, success)
     """
     try:
         from app.models import Student, Attendance, Subject
@@ -19,6 +85,13 @@ def fetch_attendance_data(student_id):
         if not student:
             return {'error': 'Student not found'}, False
         
+        # Determine if we should use Google Sheets
+        use_sheets = USE_GOOGLE_SHEETS if use_google_sheets is None else use_google_sheets
+        
+        if use_sheets and SPREADSHEET_ID:
+            return fetch_attendance_from_google_sheets(student_id)
+        
+        # Fall back to database
         # Get attendance records for the student
         attendance_records = Attendance.query.filter_by(student_id=student.id).all()
         

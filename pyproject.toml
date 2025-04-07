@@ -15,4 +15,9 @@ dependencies = [
     "anthropic>=0.49.0",
     "flask-mail>=0.10.0",
     "flask-jwt-extended>=4.7.1",
+    "gspread>=6.2.0",
+    "google-auth>=2.38.0",
+    "google-auth-oauthlib>=1.2.1",
+    "google-auth-httplib2>=0.2.0",
+    "google-api-python-client>=2.166.0",
 ]

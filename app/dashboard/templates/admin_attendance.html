@@ -36,9 +36,14 @@
             <div class="card bg-dark text-light mb-4">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Low Attendance Students</h5>
-                    <button id="sendAlertBtn" class="btn btn-warning">
-                        <i class="fas fa-bell me-2"></i> Send Alerts
-                    </button>
+                    <div>
+                        <a href="{{ url_for('dashboard.admin_sync_attendance') }}" class="btn btn-info me-2">
+                            <i class="fas fa-sync-alt me-2"></i> Sync from Google Sheets
+                        </a>
+                        <button id="sendAlertBtn" class="btn btn-warning">
+                            <i class="fas fa-bell me-2"></i> Send Alerts
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     {% if low_attendance_students %}
