@@ -3,7 +3,7 @@ from flask_login import login_user, current_user, logout_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 from app.models import User, Student, Admin
-from app.auth.forms import LoginForm, RegistrationForm
+from app.auth.forms import LoginForm, RegistrationForm, AdminRegistrationForm
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 import datetime
 
@@ -78,6 +78,41 @@ def register():
         return redirect(url_for('auth.login'))
     
     return render_template('register.html', title='Register', form=form)
+
+@auth_bp.route('/register_admin', methods=['GET', 'POST'])
+def register_admin():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard.index'))
+    
+    form = AdminRegistrationForm()
+    
+    if form.validate_on_submit():
+        # Create user with admin role
+        user = User(
+            username=form.username.data,
+            email=form.email.data,
+            role='admin'  # Set role to admin
+        )
+        user.set_password(form.password.data)
+        
+        # Create admin profile
+        admin = Admin(
+            first_name=form.first_name.data,
+            last_name=form.last_name.data,
+            department=form.department.data
+        )
+        
+        # Link admin to user
+        user.admin = admin
+        
+        # Save to database
+        db.session.add(user)
+        db.session.commit()
+        
+        flash('Admin account has been created! You can now log in.', 'success')
+        return redirect(url_for('auth.login'))
+    
+    return render_template('register_admin.html', title='Register Admin', form=form)
 
 @auth_bp.route('/logout')
 @login_required
