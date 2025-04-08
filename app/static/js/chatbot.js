@@ -1,7 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM fully loaded');
+    
     const chatForm = document.getElementById('chat-form');
+    console.log('Chat form element:', chatForm);
+    
     const chatInput = document.getElementById('chat-input');
+    console.log('Chat input element:', chatInput);
+    
     const chatMessages = document.getElementById('chat-messages');
+    console.log('Chat messages element:', chatMessages);
+    
     const chatHistory = [];
     let currentModel = 'openai'; // Default model
     
@@ -83,10 +91,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (chatForm) {
+        console.log('Adding submit event listener to chat form');
         chatForm.addEventListener('submit', function(e) {
+            console.log('Form submitted!');
             e.preventDefault();
             
             const message = chatInput.value.trim();
+            console.log('Message:', message);
             
             if (message) {
                 // Add user message to chat
@@ -102,6 +113,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 sendMessageToAPI(message);
             }
         });
+    } else {
+        console.error('Chat form element not found!');
+    }
+    
+    // Add a click event listener to the send button as a fallback
+    const sendButton = document.getElementById('send-button');
+    if (sendButton) {
+        console.log('Adding click event listener to send button');
+        sendButton.addEventListener('click', function() {
+            console.log('Send button clicked!');
+            
+            const message = chatInput.value.trim();
+            console.log('Message:', message);
+            
+            if (message) {
+                // Add user message to chat
+                addMessageToChat('user', message);
+                
+                // Clear input
+                chatInput.value = '';
+                
+                // Show typing indicator
+                showTypingIndicator();
+                
+                // Send message to API
+                sendMessageToAPI(message);
+            }
+        });
+    } else {
+        console.error('Send button element not found!');
     }
     
     function addMessageToChat(sender, message) {
