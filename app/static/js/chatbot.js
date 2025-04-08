@@ -3,6 +3,84 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatInput = document.getElementById('chat-input');
     const chatMessages = document.getElementById('chat-messages');
     const chatHistory = [];
+    let currentModel = 'openai'; // Default model
+    
+    // Handle AI model selection
+    const openAiBtn = document.getElementById('openai-model-btn');
+    const grokBtn = document.getElementById('grok-model-btn');
+    
+    if (openAiBtn && grokBtn) {
+        openAiBtn.addEventListener('click', function() {
+            setActiveModel('openai');
+        });
+        
+        grokBtn.addEventListener('click', function() {
+            setActiveModel('grok');
+        });
+    }
+    
+    function setActiveModel(model) {
+        currentModel = model;
+        const modelBadge = document.getElementById('current-model-badge');
+        
+        // Update UI for buttons
+        if (model === 'openai') {
+            openAiBtn.classList.add('active');
+            grokBtn.classList.remove('active');
+            if (modelBadge) {
+                modelBadge.textContent = 'Currently using: OpenAI (GPT-4o)';
+                modelBadge.className = 'badge bg-primary mb-2';
+            }
+            // Add animation for transition
+            chatMessages.classList.add('fade-transition');
+            setTimeout(() => {
+                addMessageToChat('assistant', 'Switched to OpenAI model. How can I help you with your studies?');
+                chatMessages.classList.remove('fade-transition');
+            }, 300);
+        } else {
+            grokBtn.classList.add('active');
+            openAiBtn.classList.remove('active');
+            if (modelBadge) {
+                modelBadge.textContent = 'Currently using: xAI (Grok-2)';
+                modelBadge.className = 'badge bg-warning text-dark mb-2';
+            }
+            // Add animation for transition
+            chatMessages.classList.add('fade-transition');
+            setTimeout(() => {
+                addMessageToChat('assistant', 'Switched to Grok model. I\'m ready to assist with your educational questions!');
+                chatMessages.classList.remove('fade-transition');
+            }, 300);
+        }
+    }
+    
+    // Add fade transition style
+    const style = document.createElement('style');
+    style.textContent = `
+        .fade-transition {
+            opacity: 0.5;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .active {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Handle suggestion buttons
+    const suggestionButtons = document.querySelectorAll('.suggestion-btn');
+    if (suggestionButtons) {
+        suggestionButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const suggestion = this.getAttribute('data-suggestion');
+                if (suggestion) {
+                    chatInput.value = suggestion;
+                    // Focus the input
+                    chatInput.focus();
+                }
+            });
+        });
+    }
     
     if (chatForm) {
         chatForm.addEventListener('submit', function(e) {
@@ -34,14 +112,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (sender === 'user') {
             messageElement.classList.add('bg-primary', 'text-white', 'rounded-3', 'ms-auto');
             chatHistory.push({
-                "role": "user",
-                "content": message
+                "user": message
             });
         } else {
             messageElement.classList.add('bg-light', 'rounded-3');
             chatHistory.push({
-                "role": "assistant",
-                "content": message
+                "assistant": message
             });
         }
         
@@ -59,6 +135,36 @@ document.addEventListener('DOMContentLoaded', function() {
         typingElement.id = 'typing-indicator';
         typingElement.classList.add('chat-message', 'assistant-message', 'bg-light', 'rounded-3', 'mb-3', 'p-3');
         typingElement.style.maxWidth = '75%';
+        
+        // Add typing animation with CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            .typing-dots {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+            }
+            .dot {
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                margin-right: 4px;
+                background-color: #333;
+                border-radius: 50%;
+                opacity: 0.6;
+                animation: dot-pulse 1.5s infinite ease-in-out;
+            }
+            .dot:nth-child(1) { animation-delay: 0s; }
+            .dot:nth-child(2) { animation-delay: 0.2s; }
+            .dot:nth-child(3) { animation-delay: 0.4s; }
+            
+            @keyframes dot-pulse {
+                0%, 100% { transform: scale(1); opacity: 0.6; }
+                50% { transform: scale(1.5); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+        
         typingElement.innerHTML = `
             <div class="typing-dots">
                 <span class="dot"></span>
@@ -86,7 +192,8 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({
                 message: message,
-                history: chatHistory
+                history: chatHistory,
+                model: currentModel
             })
         })
         .then(response => {
@@ -120,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add initial greeting message
     if (chatMessages && chatMessages.children.length === 0) {
         setTimeout(() => {
-            addMessageToChat('assistant', 'Hello! I\'m your AI assistant. How can I help you with your studies today?');
+            addMessageToChat('assistant', 'Hello! I\'m your SmartEdu AI educational assistant. I can help with study techniques, subject-specific questions, exam preparation, or educational resources. What would you like help with today?');
         }, 500);
     }
 });

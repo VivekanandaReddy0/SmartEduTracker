@@ -5,6 +5,7 @@ from app.models import Student, Mark, Attendance, Announcement, Subject
 from app.dashboard.data_service import get_student_data
 from app.utils import fetch_attendance_data, calculate_attendance_percentage, send_attendance_alert, admin_required, student_required
 from app.chatbot.assistant import get_ai_response
+from app.chatbot.grok_assistant import get_grok_response
 import json
 import random
 
@@ -228,12 +229,19 @@ def api_chat():
     # Get chat history
     history = data.get('history', [])
     
-    # Get AI response
+    # Check which AI model to use
+    model = data.get('model', 'openai')  # Default to OpenAI if not specified
+    
+    # Get AI response based on selected model
     try:
-        response = get_ai_response(message, history)
+        if model == 'grok':
+            response = get_grok_response(message, history)
+        else:
+            response = get_ai_response(message, history)
         
         return jsonify({
-            'response': response
+            'response': response,
+            'model': model
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500

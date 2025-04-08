@@ -36,58 +36,50 @@
         <!-- Main Content -->
         <div class="col-md-9">
             <div class="card bg-dark text-light">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-robot me-2"></i> Educational AI Assistant</h5>
+                    <div class="model-selector">
+                        <div class="btn-group btn-group-sm" role="group" aria-label="AI Model Selector">
+                            <button type="button" class="btn btn-light active" id="openai-model-btn" data-model="openai">OpenAI</button>
+                            <button type="button" class="btn btn-light" id="grok-model-btn" data-model="grok">Grok</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i> Ask any educational question and our AI assistant will help you! You can ask about subject concepts, homework help, study tips, and more.
+                        <i class="fas fa-info-circle me-2"></i> Ask any educational question and our AI assistant will help you! You can ask about subject concepts, homework help, study tips, and more. 
+                        <small class="d-block mt-1">Switch between AI models: <strong>OpenAI (GPT-4o)</strong> or <strong>xAI (Grok-2)</strong> using the buttons above.</small>
+                    </div>
+                    <div id="model-info" class="mb-3 text-center">
+                        <span class="badge bg-primary mb-2" id="current-model-badge">Currently using: OpenAI (GPT-4o)</span>
                     </div>
                     
-                    <div class="chat-container mb-3" id="chatContainer" style="height: 400px; overflow-y: auto; border: 1px solid #444; border-radius: 0.25rem; padding: 1rem;">
-                        <div class="chat-message bot">
-                            <div class="avatar me-2">
-                                <i class="fas fa-robot"></i>
-                            </div>
-                            <div class="message-content">
-                                <div class="message-bubble bg-primary text-white p-3 rounded mb-2">
-                                    Hi there! I'm your educational AI assistant. How can I help you with your studies today?
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {% for chat in chat_history %}
-                        <div class="chat-message user">
-                            <div class="message-content">
-                                <div class="message-bubble bg-secondary text-white p-3 rounded mb-2 ms-auto" style="max-width: 75%;">
-                                    {{ chat.message }}
-                                </div>
-                                <div class="message-time text-muted small text-end">
-                                    {{ chat.created_at.strftime('%H:%M') }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="chat-message bot">
-                            <div class="avatar me-2">
-                                <i class="fas fa-robot"></i>
-                            </div>
-                            <div class="message-content">
-                                <div class="message-bubble bg-primary text-white p-3 rounded mb-2">
-                                    {{ chat.response|safe }}
-                                </div>
-                                <div class="message-time text-muted small">
-                                    {{ chat.created_at.strftime('%H:%M') }}
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
+                    <div id="chat-messages" class="chat-container mb-3" style="height: 400px; overflow-y: auto; border: 1px solid #444; border-radius: 0.25rem; padding: 1rem;">
+                        <!-- Chat messages will be added dynamically by JavaScript -->
                     </div>
                     
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="messageInput" placeholder="Type your question here...">
-                        <button class="btn btn-primary" type="button" id="sendButton">
+                    <form id="chat-form" class="input-group">
+                        <input type="text" class="form-control" id="chat-input" placeholder="Type your educational question here...">
+                        <button class="btn btn-primary" type="submit">
                             <i class="fas fa-paper-plane"></i> Send
                         </button>
+                    </form>
+                    
+                    <div class="mt-3">
+                        <div class="card bg-dark border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Suggested Topics</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button class="btn btn-sm btn-outline-info suggestion-btn" data-suggestion="How can I improve my study habits?">Study Habits</button>
+                                    <button class="btn btn-sm btn-outline-info suggestion-btn" data-suggestion="What are the best strategies for exam preparation?">Exam Prep</button>
+                                    <button class="btn btn-sm btn-outline-info suggestion-btn" data-suggestion="Can you explain the concept of derivatives in calculus?">Math Concepts</button>
+                                    <button class="btn btn-sm btn-outline-info suggestion-btn" data-suggestion="How can I improve my programming skills?">Programming</button>
+                                    <button class="btn btn-sm btn-outline-info suggestion-btn" data-suggestion="What are some effective time management techniques for students?">Time Management</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

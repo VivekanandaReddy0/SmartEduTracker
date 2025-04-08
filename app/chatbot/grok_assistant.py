@@ -6,24 +6,15 @@ from app.models import ChatHistory, db
 from flask_login import current_user
 from openai import OpenAI
 
-# Initialize OpenAI client
-# the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-# do not change this unless explicitly requested by the user
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+# Initialize xAI client with OpenAI client interface (Grok uses a compatible API)
+xai_client = OpenAI(
+    base_url="https://api.x.ai/v1", 
+    api_key=os.environ.get("XAI_API_KEY")
+)
 
-# Fallback responses for system without API key
-FALLBACK_RESPONSES = {
-    "general": [
-        "I'm here to help with your educational questions. What subject are you interested in?",
-        "Feel free to ask me about any academic topic you're struggling with.",
-        "I can provide guidance on study techniques, specific subjects, or educational resources.",
-        "What educational topic would you like help with today?",
-    ]
-}
-
-def get_ai_response(message, history=[]):
+def get_grok_response(message, history=[]):
     """
-    Generate a contextual educational response based on the user's message using OpenAI's API
+    Generate a contextual educational response based on the user's message using xAI's Grok model
     
     Args:
         message (str): User message
@@ -34,11 +25,11 @@ def get_ai_response(message, history=[]):
     """
     try:
         # Check if API key is available
-        if not os.environ.get("OPENAI_API_KEY"):
-            logging.warning("OpenAI API key not found. Using fallback responses.")
-            return "I'm here to help with your educational questions. What topic would you like assistance with?"
+        if not os.environ.get("XAI_API_KEY"):
+            logging.warning("xAI API key not found. Please use OpenAI instead.")
+            return "I'm unable to connect to the Grok model right now. Please try OpenAI instead or contact your administrator."
         
-        # Format conversation history for OpenAI
+        # Format conversation history for xAI
         system_message = """You are an educational assistant for the SmartEdu student portal, designed to support students in their academic journey.
 
 Your primary goals are to:
@@ -72,11 +63,11 @@ Keep responses concise (under 200 words), educational, and end with a follow-up 
         # Add current message
         messages.append({"role": "user", "content": message})
         
-        # Call OpenAI API
-        response = client.chat.completions.create(
-            model="gpt-4o",  # Using the latest model
+        # Call xAI Grok API
+        response = xai_client.chat.completions.create(
+            model="grok-2-1212",  # Using the Grok-2 model
             messages=messages,
-            max_tokens=250,
+            max_tokens=300,
             temperature=0.7,
         )
         
@@ -100,7 +91,7 @@ Keep responses concise (under 200 words), educational, and end with a follow-up 
         return ai_response
         
     except Exception as e:
-        logging.error(f"Error in get_ai_response: {str(e)}")
+        logging.error(f"Error in get_grok_response: {str(e)}")
         # Log the full error for debugging
         import traceback
         logging.error(traceback.format_exc())
