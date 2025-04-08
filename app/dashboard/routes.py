@@ -1,13 +1,14 @@
 from flask import Blueprint, render_template, flash, redirect, url_for, request, jsonify, current_app
 from flask_login import login_required, current_user
 from app import db
-from app.models import Student, Mark, Attendance, Announcement, Subject
+from app.models import Student, Mark, Attendance, Announcement, Subject, Settings
 from app.dashboard.data_service import get_student_data
 from app.utils import fetch_attendance_data, calculate_attendance_percentage, send_attendance_alert, admin_required, student_required
 from app.chatbot.assistant import get_ai_response
 from app.chatbot.grok_assistant import get_grok_response
 import json
 import random
+from datetime import datetime, date
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard', template_folder='templates')
 
@@ -30,6 +31,19 @@ def index():
         # Get announcements
         announcements = Announcement.query.order_by(Announcement.created_at.desc()).limit(5).all()
         
+        # Check today's attendance status
+        today = datetime.now().date()
+        today_attendance = Attendance.query.filter_by(
+            student_id=student.id,
+            date=today
+        ).all()
+        
+        # Determine if the student is present today in any class
+        if today_attendance:
+            is_present_today = any(a.status for a in today_attendance)
+        else:
+            is_present_today = False
+        
         # Check if attendance alert needed
         if attendance_stats.get('overall', {}).get('low_attendance', False):
             flash('Your overall attendance is below 75%. Please attend classes regularly.', 'warning')
@@ -40,7 +54,9 @@ def index():
             student=student,
             attendance_stats=attendance_stats,
             marks=marks,
-            announcements=announcements
+            announcements=announcements,
+            today=today,
+            is_present_today=is_present_today
         )
     elif current_user.role == 'admin':
         # Admin dashboard
@@ -625,3 +641,41 @@ def admin_add_announcement():
         'success': True,
         'message': 'Announcement added successfully'
     }), 201
+    
+@dashboard_bp.route('/admin/today_attendance', methods=['GET'])
+@login_required
+@admin_required
+def admin_today_attendance():
+    """View for displaying today's attendance records"""
+    
+    # Get today's date
+    today = datetime.now().date()
+    
+    # Get all students
+    students = Student.query.all()
+    
+    # Get all attendance records for today
+    today_attendance = {}
+    for student in students:
+        # Check if the student has an attendance record for today
+        attendance = Attendance.query.filter_by(
+            student_id=student.id,
+            date=today
+        ).all()
+        
+        # Store the attendance status (present/absent) for each student
+        if attendance:
+            # A student might have multiple attendance records for different subjects
+            # Consider them present if they were present in at least one class
+            present_in_any = any(a.status for a in attendance)
+            today_attendance[student.id] = present_in_any
+        else:
+            today_attendance[student.id] = False  # Default to absent if no record exists
+    
+    return render_template(
+        'admin_today_attendance.html',
+        title="Today's Attendance",
+        students=students,
+        today_attendance=today_attendance,
+        today=today
+    )
