@@ -41,6 +41,27 @@ def get_mock_google_sheets_client():
                     {"Code": "DEFAULT", "Name": "Default Subject", "Semester": 1, "Credit Hours": 3}
                 ]
             return []
+            
+        def get_all_values(self):
+            if self.title == "Attendance":
+                # Return example attendance data with header row
+                # Format: [ [Col A, Col B, Col C], ... ]
+                return [
+                    ["Date", "Time", "Name"],  # Header row
+                    ["2025-04-01", "09:30", "John Smith"],
+                    ["2025-04-01", "09:35", "Jane Doe"],
+                    ["2025-04-02", "09:28", "John Smith"],
+                    ["2025-04-02", "09:40", "Jane Doe"],
+                    [datetime.now().strftime('%Y-%m-%d'), "10:00", "John Smith"],  # Today's record
+                    [datetime.now().strftime('%Y-%m-%d'), "10:15", "Jane Doe"],    # Today's record
+                ]
+            elif self.title == "Subjects":
+                # Return example subjects data with header row
+                return [
+                    ["Code", "Name", "Semester", "Credit Hours"],  # Header row
+                    ["DEFAULT", "Default Subject", "1", "3"]
+                ]
+            return []
     
     class MockClient:
         def open_by_key(self, key):
@@ -89,8 +110,8 @@ def get_attendance_from_sheets(spreadsheet_id, sheet_name="Attendance"):
     """
     Get attendance data from Google Sheets
     
-    Current sheet format:
-    | Date | Time | Name |
+    Sheet format:
+    | A (Date) | B (Time) | C (Name) |
     
     Returns:
     List of dictionaries with attendance data or None in case of error
@@ -104,26 +125,31 @@ def get_attendance_from_sheets(spreadsheet_id, sheet_name="Attendance"):
         # Open the spreadsheet
         sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
         
-        # Get all records
-        records = sheet.get_all_records()
+        # Get all values from the sheet (including header row)
+        all_values = sheet.get_all_values()
         
-        if not records:
+        if not all_values or len(all_values) <= 1:  # Check if we have data (header + at least one row)
             current_app.logger.warning(f"No attendance records found in sheet '{sheet_name}'")
             return []
             
         # Format the records
         formatted_records = []
         default_subject_code = "DEFAULT"  # Default subject code
-
-        for record in records:
-            # Check if we have the expected fields
-            if not all(field in record for field in ['Date', 'Time', 'Name']):
-                current_app.logger.warning(f"Record missing required fields (Date, Time, Name): {record}")
+        
+        # Skip the header row (first row)
+        for row in all_values[1:]:
+            # Check if we have all required columns
+            if len(row) < 3 or not all(row[i] for i in range(3)):
+                current_app.logger.warning(f"Row missing required data in columns A, B, or C: {row}")
                 continue
-                
+            
             try:
+                # Extract data from columns - column A is Date, B is Time, C is Name
+                date_str = row[0]  # Column A - Date
+                time_str = row[1]  # Column B - Time
+                name = row[2]      # Column C - Name
+                
                 # Format date string to datetime object if needed
-                date_str = record['Date']
                 date_obj = None
                 
                 # Try different date formats
@@ -135,11 +161,9 @@ def get_attendance_from_sheets(spreadsheet_id, sheet_name="Attendance"):
                         continue
                 
                 if not date_obj:
-                    current_app.logger.warning(f"Could not parse date '{date_str}' for record")
+                    current_app.logger.warning(f"Could not parse date '{date_str}' for row {row}")
                     continue
                 
-                # Extract name (which is used as student ID)
-                name = record['Name']
                 # Default to present
                 status = True
                 
@@ -148,11 +172,11 @@ def get_attendance_from_sheets(spreadsheet_id, sheet_name="Attendance"):
                     'date': date_obj.strftime('%Y-%m-%d'),
                     'subject_code': default_subject_code,
                     'status': status,
-                    'time': record['Time']  # Store time for reference
+                    'time': time_str  # Store time for reference
                 })
                 
             except Exception as e:
-                current_app.logger.warning(f"Error formatting record: {str(e)}")
+                current_app.logger.warning(f"Error formatting row: {str(e)}")
                 continue
                 
         return formatted_records
@@ -208,8 +232,8 @@ def sync_attendance_to_database(spreadsheet_id, sheet_name="Attendance"):
     """
     Sync attendance data from Google Sheets to the database
     
-    Current sheet format:
-    | Date | Time | Name |
+    Sheet format:
+    | A (Date) | B (Time) | C (Name) |
     
     Returns:
     Tuple (success, message)
