@@ -154,70 +154,103 @@
                 </div>
             </div>
             
-            <!-- Skills Assessment Card -->
+            <!-- Learning Resources Card -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold"><i class="fas fa-tasks me-2"></i>Skills Assessment</h6>
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-book-reader me-2"></i>Learning Resources</h6>
                 </div>
                 <div class="card-body">
                     <p class="text-muted mb-4">
-                        Based on your academic performance, here's an assessment of your skills in different areas:
+                        Access these educational resources to enhance your learning for your current courses:
                     </p>
                     
-                    <!-- Skill Bars -->
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Critical Thinking</span>
-                            <span>85%</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: 85%;" 
-                                aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Problem Solving</span>
-                            <span>78%</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: 78%;" 
-                                aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Research Skills</span>
-                            <span>72%</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: 72%;" 
-                                aria-valuenow="72" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Communication</span>
-                            <span>90%</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: 90%;" 
-                                aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Technical Skills</span>
-                            <span>82%</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: 82%;" 
-                                aria-valuenow="82" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
+                    <!-- Learning Resources List -->
+                    <div class="list-group">
+                        {% if student.marks %}
+                            {% for mark in student.marks %}
+                            <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="modal" data-bs-target="#resourceModal{{ mark.subject.id }}">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ mark.subject.name }}</h6>
+                                    <span class="badge bg-primary rounded-pill">{{ mark.subject.credit_hours }} Credits</span>
+                                </div>
+                                <p class="mb-1"><small>Access study materials, textbooks and practice exams</small></p>
+                            </a>
+                            
+                            <!-- Resource Modal for each subject -->
+                            <div class="modal fade" id="resourceModal{{ mark.subject.id }}" tabindex="-1" aria-labelledby="resourceModalLabel{{ mark.subject.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content bg-dark text-light">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title" id="resourceModalLabel{{ mark.subject.id }}">Resources for {{ mark.subject.name }}</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-book me-2"></i>Textbooks</h6>
+                                            <ul class="list-group list-group-flush mb-4">
+                                                <li class="list-group-item bg-dark text-light border-secondary">
+                                                    <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                    <strong>Primary Textbook:</strong> Introduction to {{ mark.subject.name }}
+                                                </li>
+                                                <li class="list-group-item bg-dark text-light border-secondary">
+                                                    <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                    <strong>Supplementary Reading:</strong> Advanced Topics in {{ mark.subject.name }}
+                                                </li>
+                                            </ul>
+                                            
+                                            <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-video me-2"></i>Video Lectures</h6>
+                                            <ul class="list-group list-group-flush mb-4">
+                                                <li class="list-group-item bg-dark text-light border-secondary">
+                                                    <i class="fab fa-youtube text-danger me-2"></i>
+                                                    <strong>Lecture Series:</strong> Fundamentals of {{ mark.subject.name }}
+                                                </li>
+                                                <li class="list-group-item bg-dark text-light border-secondary">
+                                                    <i class="fab fa-youtube text-danger me-2"></i>
+                                                    <strong>Tutorial Videos:</strong> Problem-solving in {{ mark.subject.name }}
+                                                </li>
+                                            </ul>
+                                            
+                                            <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-laptop-code me-2"></i>Practice Materials</h6>
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item bg-dark text-light border-secondary">
+                                                    <i class="fas fa-file-alt text-info me-2"></i>
+                                                    <strong>Practice Tests:</strong> {{ mark.subject.name }} Mock Exams
+                                                </li>
+                                                <li class="list-group-item bg-dark text-light border-secondary">
+                                                    <i class="fas fa-file-alt text-info me-2"></i>
+                                                    <strong>Assignments:</strong> Extra Practice Problems
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="button" class="btn btn-primary" onclick="alert('This feature will be available soon!')">Ask AI Tutor</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>Once you're enrolled in courses, learning resources will appear here.
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Common Resources for All Students -->
+                        <a href="#" class="list-group-item list-group-item-action list-group-item-primary" onclick="alert('Library access coming soon!')">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1"><i class="fas fa-university me-2"></i>University Library Access</h6>
+                                <span class="badge bg-secondary rounded-pill">All Subjects</span>
+                            </div>
+                            <p class="mb-1"><small>Access the university's digital library collection</small></p>
+                        </a>
+                        
+                        <a href="#" class="list-group-item list-group-item-action list-group-item-success" onclick="alert('Research database access coming soon!')">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1"><i class="fas fa-database me-2"></i>Research Databases</h6>
+                                <span class="badge bg-secondary rounded-pill">Research</span>
+                            </div>
+                            <p class="mb-1"><small>Access scholarly journals and research papers</small></p>
+                        </a>
                     </div>
                 </div>
             </div>
