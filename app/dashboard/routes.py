@@ -439,6 +439,124 @@ def admin_send_alerts():
         'message': f'Sent alerts to {success_count} students'
     }), 200
 
+@dashboard_bp.route('/admin/marks', methods=['GET'])
+@login_required
+def admin_marks():
+    if current_user.role != 'admin':
+        flash('You do not have permission to access this page', 'danger')
+        return redirect(url_for('dashboard.index'))
+    
+    students = Student.query.all()
+    subjects = Subject.query.all()
+    
+    # Get all marks organized by student
+    student_marks = {}
+    for student in students:
+        marks = Mark.query.filter_by(student_id=student.id).all()
+        student_marks[student.id] = marks
+    
+    return render_template(
+        'admin_marks.html',
+        title='Manage Student Marks',
+        students=students,
+        subjects=subjects,
+        student_marks=student_marks
+    )
+
+@dashboard_bp.route('/admin/edit_mark', methods=['POST'])
+@login_required
+def admin_edit_mark():
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    mark_id = data.get('mark_id')
+    student_id = data.get('student_id')
+    subject_id = data.get('subject_id')
+    quiz_marks = data.get('quiz_marks')
+    midterm_marks = data.get('midterm_marks')
+    final_marks = data.get('final_marks')
+    
+    # Validate inputs
+    if not student_id or not subject_id:
+        return jsonify({'success': False, 'message': 'Student and subject are required'}), 400
+    
+    try:
+        quiz_marks = float(quiz_marks) if quiz_marks is not None else 0
+        midterm_marks = float(midterm_marks) if midterm_marks is not None else 0
+        final_marks = float(final_marks) if final_marks is not None else 0
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Invalid mark values'}), 400
+    
+    if mark_id:
+        # Update existing mark
+        mark = Mark.query.get(mark_id)
+        if not mark:
+            return jsonify({'success': False, 'message': 'Mark not found'}), 404
+            
+        mark.quiz_marks = quiz_marks
+        mark.midterm_marks = midterm_marks
+        mark.final_marks = final_marks
+        mark.calculate_total()
+    else:
+        # Create new mark
+        mark = Mark(
+            student_id=student_id,
+            subject_id=subject_id,
+            quiz_marks=quiz_marks,
+            midterm_marks=midterm_marks,
+            final_marks=final_marks
+        )
+        mark.calculate_total()
+        db.session.add(mark)
+    
+    # Update student GPA
+    student = Student.query.get(student_id)
+    if student:
+        from app.utils import calculate_gpa
+        student_marks = Mark.query.filter_by(student_id=student.id).all()
+        student.gpa = calculate_gpa(student_marks)
+    
+    try:
+        db.session.commit()
+        return jsonify({
+            'success': True, 
+            'message': 'Mark updated successfully',
+            'total_marks': mark.total_marks,
+            'grade': mark.grade
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+@dashboard_bp.route('/admin/delete_mark/<int:mark_id>', methods=['POST'])
+@login_required
+def admin_delete_mark(mark_id):
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    mark = Mark.query.get(mark_id)
+    if not mark:
+        return jsonify({'success': False, 'message': 'Mark not found'}), 404
+    
+    student_id = mark.student_id
+    
+    try:
+        db.session.delete(mark)
+        
+        # Update student GPA
+        student = Student.query.get(student_id)
+        if student:
+            from app.utils import calculate_gpa
+            student_marks = Mark.query.filter_by(student_id=student.id).all()
+            student.gpa = calculate_gpa(student_marks)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Mark deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
 @dashboard_bp.route('/admin/add_announcement', methods=['POST'])
 @login_required
 def admin_add_announcement():
