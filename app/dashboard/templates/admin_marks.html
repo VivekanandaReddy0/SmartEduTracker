@@ -117,6 +117,9 @@
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Student Marks</h5>
                     <div class="d-flex align-items-center">
+                        <button id="recalculateGpaBtn" class="btn btn-info btn-sm me-2">
+                            <i class="fas fa-sync-alt me-1"></i> Recalculate All GPAs
+                        </button>
                         <input type="text" id="studentSearch" class="form-control form-control-sm me-2" placeholder="Search student...">
                         <select id="filterSubject" class="form-select form-select-sm" style="width: 180px;">
                             <option value="all">All Subjects</option>
@@ -231,6 +234,43 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Recalculate GPAs functionality
+        const recalculateGpaBtn = document.getElementById('recalculateGpaBtn');
+        if (recalculateGpaBtn) {
+            recalculateGpaBtn.addEventListener('click', function() {
+                // Change button state to loading
+                const originalText = recalculateGpaBtn.innerHTML;
+                recalculateGpaBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Recalculating...';
+                recalculateGpaBtn.disabled = true;
+                
+                fetch('/dashboard/admin/recalculate_all_gpas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Restore button
+                    recalculateGpaBtn.innerHTML = originalText;
+                    recalculateGpaBtn.disabled = false;
+                    
+                    if (data.success) {
+                        alert(data.message);
+                        window.location.reload(); // Reload to show updated GPAs
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    recalculateGpaBtn.innerHTML = originalText;
+                    recalculateGpaBtn.disabled = false;
+                    alert('An error occurred while recalculating GPAs.');
+                });
+            });
+        }
+        
         // Filter functionality
         const studentSearch = document.getElementById('studentSearch');
         const filterSubject = document.getElementById('filterSubject');
@@ -268,7 +308,7 @@
                 const midtermMarks = document.getElementById('midtermMarks').value;
                 const finalMarks = document.getElementById('finalMarks').value;
                 
-                fetch('/dashboard/admin/marks/edit', {
+                fetch('/dashboard/admin/edit_mark', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -330,7 +370,7 @@
                 const midtermMarks = editMidtermMarks.value;
                 const finalMarks = editFinalMarks.value;
                 
-                fetch('/dashboard/admin/marks/edit', {
+                fetch('/dashboard/admin/edit_mark', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

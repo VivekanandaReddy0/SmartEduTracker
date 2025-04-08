@@ -455,6 +455,25 @@ def admin_marks():
         student_marks=student_marks
     )
 
+@dashboard_bp.route('/admin/recalculate_all_gpas', methods=['POST'])
+@login_required
+@admin_required
+def admin_recalculate_all_gpas():
+    """Recalculate GPA for all students"""
+    from app.utils import update_all_student_gpas
+    
+    try:
+        updated_count = update_all_student_gpas()
+        return jsonify({
+            'success': True,
+            'message': f'Successfully updated GPA for {updated_count} students'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error updating GPAs: {str(e)}'
+        }), 500
+
 @dashboard_bp.route('/admin/edit_mark', methods=['POST'])
 @login_required
 @admin_required
@@ -502,11 +521,8 @@ def admin_edit_mark():
         db.session.add(mark)
     
     # Update student GPA
-    student = Student.query.get(student_id)
-    if student:
-        from app.utils import calculate_gpa
-        student_marks = Mark.query.filter_by(student_id=student.id).all()
-        student.gpa = calculate_gpa(student_marks)
+    from app.utils import update_student_gpa
+    update_student_gpa(student_id)
     
     try:
         db.session.commit()
@@ -535,11 +551,8 @@ def admin_delete_mark(mark_id):
         db.session.delete(mark)
         
         # Update student GPA
-        student = Student.query.get(student_id)
-        if student:
-            from app.utils import calculate_gpa
-            student_marks = Mark.query.filter_by(student_id=student.id).all()
-            student.gpa = calculate_gpa(student_marks)
+        from app.utils import update_student_gpa
+        update_student_gpa(student_id)
         
         db.session.commit()
         return jsonify({'success': True, 'message': 'Mark deleted successfully'})

@@ -311,3 +311,54 @@ def calculate_gpa(marks):
         total_credits += credits
     
     return total_points / total_credits if total_credits > 0 else 0.0
+
+def update_student_gpa(student_id):
+    """
+    Recalculate and update the GPA for a student based on all their marks.
+    
+    Args:
+        student_id (int): The student ID in the database
+        
+    Returns:
+        float or None: The updated GPA value, or None if the student has failed any subject
+    """
+    from app.models import Student, Mark
+    
+    student = Student.query.get(student_id)
+    if not student:
+        return None
+        
+    student_marks = Mark.query.filter_by(student_id=student.id).all()
+    gpa = calculate_gpa(student_marks)
+    
+    # Update the student's GPA
+    student.gpa = gpa
+    
+    # Don't commit here, let the caller handle the transaction
+    
+    return gpa
+
+def update_all_student_gpas():
+    """
+    Recalculate and update the GPA for all students in the database.
+    This is useful to ensure all student GPAs are up-to-date.
+    
+    Returns:
+        int: Number of students whose GPAs were updated
+    """
+    from app.models import Student, db
+    
+    students = Student.query.all()
+    updated_count = 0
+    
+    for student in students:
+        old_gpa = student.gpa
+        new_gpa = update_student_gpa(student.id)
+        
+        if old_gpa != new_gpa:
+            updated_count += 1
+            
+    # Commit all changes
+    db.session.commit()
+    
+    return updated_count
