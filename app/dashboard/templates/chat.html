@@ -58,12 +58,46 @@
                         <!-- Chat messages will be added dynamically by JavaScript -->
                     </div>
                     
-                    <form id="chat-form" class="input-group">
+                    <div class="input-group">
                         <input type="text" class="form-control" id="chat-input" placeholder="Type your educational question here...">
-                        <button class="btn btn-primary" type="submit" id="send-button">
+                        <button class="btn btn-primary" type="button" id="send-button" onclick="sendMessage()">
                             <i class="fas fa-paper-plane"></i> Send
                         </button>
-                    </form>
+                    </div>
+                    
+                    <script>
+                        function sendMessage() {
+                            console.log('Send button clicked directly from HTML');
+                            const chatInput = document.getElementById('chat-input');
+                            const message = chatInput.value.trim();
+                            
+                            if (message) {
+                                if (window.addMessageToChat && window.sendMessageToAPI) {
+                                    // Add user message to chat
+                                    window.addMessageToChat('user', message);
+                                    
+                                    // Clear input
+                                    chatInput.value = '';
+                                    
+                                    // Show typing indicator
+                                    window.showTypingIndicator();
+                                    
+                                    // Send message to API
+                                    window.sendMessageToAPI(message);
+                                } else {
+                                    console.error('Required functions not available');
+                                }
+                            }
+                        }
+                        
+                        // Add enter key support
+                        document.getElementById('chat-input').addEventListener('keypress', function(e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                sendMessage();
+                            }
+                        });
+                    </script>
                     
                     <div class="mt-3">
                         <div class="card bg-dark border-info">

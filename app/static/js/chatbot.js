@@ -1,6 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded');
     
+    // Debug purpose - list all elements with IDs
+    document.querySelectorAll('[id]').forEach(element => {
+        console.log('Found element with ID:', element.id);
+    });
+    
     const chatForm = document.getElementById('chat-form');
     console.log('Chat form element:', chatForm);
     
@@ -145,7 +150,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Send button element not found!');
     }
     
-    function addMessageToChat(sender, message) {
+    // Make these functions available globally
+    window.addMessageToChat = function(sender, message) {
+        console.log('Global addMessageToChat called with:', sender, message);
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', `${sender}-message`, 'mb-3', 'p-3');
         
@@ -169,9 +176,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Scroll to bottom of chat
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+    };
     
-    function showTypingIndicator() {
+    window.showTypingIndicator = function() {
+        console.log('Global showTypingIndicator called');
         const typingElement = document.createElement('div');
         typingElement.id = 'typing-indicator';
         typingElement.classList.add('chat-message', 'assistant-message', 'bg-light', 'rounded-3', 'mb-3', 'p-3');
@@ -216,16 +224,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         chatMessages.appendChild(typingElement);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+    };
     
-    function removeTypingIndicator() {
+    window.removeTypingIndicator = function() {
+        console.log('Global removeTypingIndicator called');
         const typingIndicator = document.getElementById('typing-indicator');
         if (typingIndicator) {
             typingIndicator.remove();
         }
-    }
+    };
     
-    function sendMessageToAPI(message) {
+    window.sendMessageToAPI = function(message) {
+        console.log('Global sendMessageToAPI called with:', message);
         fetch('/dashboard/api/chat', {
             method: 'POST',
             headers: {
@@ -238,37 +248,39 @@ document.addEventListener('DOMContentLoaded', function() {
             })
         })
         .then(response => {
+            console.log('API response received:', response);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
             return response.json();
         })
         .then(data => {
+            console.log('API data:', data);
             // Remove typing indicator
-            removeTypingIndicator();
+            window.removeTypingIndicator();
             
             // Add AI response to chat
             if (data.response) {
-                addMessageToChat('assistant', data.response);
+                window.addMessageToChat('assistant', data.response);
             } else if (data.error) {
-                addMessageToChat('assistant', `Error: ${data.error}`);
+                window.addMessageToChat('assistant', `Error: ${data.error}`);
             }
         })
         .catch(error => {
             console.error('Error:', error);
             
             // Remove typing indicator
-            removeTypingIndicator();
+            window.removeTypingIndicator();
             
             // Add error message to chat
-            addMessageToChat('assistant', 'Sorry, there was an error processing your request. Please try again later.');
+            window.addMessageToChat('assistant', 'Sorry, there was an error processing your request. Please try again later.');
         });
-    }
+    };
     
     // Add initial greeting message
     if (chatMessages && chatMessages.children.length === 0) {
         setTimeout(() => {
-            addMessageToChat('assistant', 'Hello! I\'m your SmartEdu AI educational assistant. I can help with study techniques, subject-specific questions, exam preparation, or educational resources. What would you like help with today?');
+            window.addMessageToChat('assistant', 'Hello! I\'m your SmartEdu AI educational assistant. I can help with study techniques, subject-specific questions, exam preparation, or educational resources. What would you like help with today?');
         }, 500);
     }
 });
