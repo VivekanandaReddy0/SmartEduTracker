@@ -172,7 +172,7 @@
             
             // Show loading state
             this.disabled = true;
-            this.innerHTML = "<i class="fas fa-spinner fa-spin me-2"></i> Testing...";
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Testing...';
             
             // Send request to test endpoint
             fetch("{{ url_for("dashboard.admin_test_sheets_connection") }}", {
@@ -211,7 +211,7 @@
                 // Reset button
                 const button = document.getElementById("testConnectionBtn");
                 button.disabled = false;
-                button.innerHTML = "<i class="fas fa-plug"></i> Test";
+                button.innerHTML = '<i class="fas fa-plug"></i> Test';
             });
         });
 
