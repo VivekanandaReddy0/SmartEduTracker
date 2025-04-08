@@ -1,14 +1,40 @@
 import os
-from flask import current_app
+from flask import current_app, flash, redirect, url_for
 from flask_mail import Message
 from app import mail
 from datetime import datetime, timedelta
 import json
 from app.models import Attendance, Subject
+from flask_login import current_user
+from functools import wraps
 
 # Configuration for Google Sheets
 SPREADSHEET_ID = os.environ.get('ATTENDANCE_SPREADSHEET_ID', '')
 USE_GOOGLE_SHEETS = bool(SPREADSHEET_ID)
+
+def admin_required(f):
+    """
+    Custom decorator to restrict access to admin users only
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'admin':
+            flash('You do not have permission to access this page. Admin access required.', 'danger')
+            return redirect(url_for('dashboard.index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def student_required(f):
+    """
+    Custom decorator to restrict access to student users only
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'student':
+            flash('You do not have permission to access this page. Student access required.', 'warning')
+            return redirect(url_for('dashboard.index'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def fetch_attendance_from_google_sheets(student_id):
     """

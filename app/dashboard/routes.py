@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import Student, Mark, Attendance, Announcement, Subject
 from app.dashboard.data_service import get_student_data
-from app.utils import fetch_attendance_data, calculate_attendance_percentage, send_attendance_alert
+from app.utils import fetch_attendance_data, calculate_attendance_percentage, send_attendance_alert, admin_required, student_required
 from app.chatbot.assistant import get_ai_response
 import json
 import random
@@ -70,145 +70,138 @@ def index():
 
 @dashboard_bp.route('/profile')
 @login_required
+@student_required
 def profile():
-    if current_user.role == 'student':
-        student = current_user.student
-        
-        # Get marks data
-        marks = Mark.query.filter_by(student_id=student.id).all()
-        
-        return render_template(
-            'profile.html',
-            title='Profile',
-            student=student,
-            marks=marks
-        )
-    else:
-        flash('Only students can access profiles', 'warning')
-        return redirect(url_for('dashboard.index'))
+    student = current_user.student
+    
+    # Get marks data
+    marks = Mark.query.filter_by(student_id=student.id).all()
+    
+    return render_template(
+        'profile.html',
+        title='Profile',
+        student=student,
+        marks=marks
+    )
 
 @dashboard_bp.route('/attendance')
 @login_required
+@student_required
 def attendance():
-    if current_user.role == 'student':
-        student = current_user.student
+    student = current_user.student
+    
+    # Fetch attendance data
+    attendance_data, success = fetch_attendance_data(student.student_id)
+    attendance_stats = {}
+    attendance_records = []
+    subject_names = []
+    subject_percentages = []
+    attendance_dates = []
+    attendance_present = []
+    attendance_absent = []
+    overall_percentage = 0
+    
+    if success:
+        attendance_stats = calculate_attendance_percentage(attendance_data)
+        overall_percentage = attendance_stats.get('overall', {}).get('percentage', 0)
         
-        # Fetch attendance data
-        attendance_data, success = fetch_attendance_data(student.student_id)
-        attendance_stats = {}
-        attendance_records = []
-        subject_names = []
-        subject_percentages = []
-        attendance_dates = []
-        attendance_present = []
-        attendance_absent = []
-        overall_percentage = 0
+        # Format records for table display
+        for record in attendance_data:
+            attendance_records.append({
+                'date': record.get('date'),
+                'subject': record.get('subject_name', 'Unknown'),
+                'subject_code': record.get('subject_code', ''),
+                'status': record.get('status', False)
+            })
         
-        if success:
-            attendance_stats = calculate_attendance_percentage(attendance_data)
-            overall_percentage = attendance_stats.get('overall', {}).get('percentage', 0)
-            
-            # Format records for table display
-            for record in attendance_data:
-                attendance_records.append({
-                    'date': record.get('date'),
-                    'subject': record.get('subject_name', 'Unknown'),
-                    'subject_code': record.get('subject_code', ''),
-                    'status': record.get('status', False)
-                })
-            
-            # Extract data for subject pie chart
-            for subject, stats in attendance_stats.items():
-                if subject != 'overall':
-                    subject_names.append(subject)
-                    subject_percentages.append(stats.get('percentage', 0))
-            
-            # Get attendance by date for history chart
-            from app.utils import get_attendance_by_date
-            date_attendance = get_attendance_by_date(attendance_data)
-            for date, counts in date_attendance.items():
-                attendance_dates.append(date)
-                attendance_present.append(counts.get('present', 0))
-                attendance_absent.append(counts.get('absent', 0))
+        # Extract data for subject pie chart
+        for subject, stats in attendance_stats.items():
+            if subject != 'overall':
+                subject_names.append(subject)
+                subject_percentages.append(stats.get('percentage', 0))
         
-        return render_template(
-            'attendance.html',
-            title='Attendance',
-            student=student,
-            attendance_stats=attendance_stats,
-            attendance_records=attendance_records,
-            overall_percentage=overall_percentage,
-            subject_names=subject_names,
-            subject_percentages=subject_percentages,
-            attendance_dates=attendance_dates,
-            attendance_present=attendance_present,
-            attendance_absent=attendance_absent
-        )
-    else:
-        flash('Only students can access attendance', 'warning')
-        return redirect(url_for('dashboard.index'))
+        # Get attendance by date for history chart
+        from app.utils import get_attendance_by_date
+        date_attendance = get_attendance_by_date(attendance_data)
+        for date, counts in date_attendance.items():
+            attendance_dates.append(date)
+            attendance_present.append(counts.get('present', 0))
+            attendance_absent.append(counts.get('absent', 0))
+    
+    return render_template(
+        'attendance.html',
+        title='Attendance',
+        student=student,
+        attendance_stats=attendance_stats,
+        attendance_records=attendance_records,
+        overall_percentage=overall_percentage,
+        subject_names=subject_names,
+        subject_percentages=subject_percentages,
+        attendance_dates=attendance_dates,
+        attendance_present=attendance_present,
+        attendance_absent=attendance_absent
+    )
 
 @dashboard_bp.route('/marks')
 @login_required
+@student_required
 def marks():
-    if current_user.role == 'student':
-        student = current_user.student
+    student = current_user.student
+    
+    # Get marks data
+    marks = Mark.query.filter_by(student_id=student.id).all()
+    
+    # Prepare data for the template
+    marks_data = []
+    subjects = []
+    quiz_marks = []
+    midterm_marks = []
+    final_marks = []
+    
+    # For GPA chart
+    semesters = list(range(1, student.semester + 1))
+    semester_gpas = [round(3.0 + (random.random() * 0.8), 2) for _ in range(student.semester)]
+    
+    # Process marks data
+    for mark in marks:
+        subjects.append(mark.subject.name)
+        quiz_marks.append(mark.quiz_marks)
+        midterm_marks.append(mark.midterm_marks)
+        final_marks.append(mark.final_marks)
         
-        # Get marks data
-        marks = Mark.query.filter_by(student_id=student.id).all()
-        
-        # Prepare data for the template
-        marks_data = []
-        subjects = []
-        quiz_marks = []
-        midterm_marks = []
-        final_marks = []
-        
-        # For GPA chart
-        semesters = list(range(1, student.semester + 1))
-        semester_gpas = [round(3.0 + (random.random() * 0.8), 2) for _ in range(student.semester)]
-        
-        # Process marks data
-        for mark in marks:
-            subjects.append(mark.subject.name)
-            quiz_marks.append(mark.quiz_marks)
-            midterm_marks.append(mark.midterm_marks)
-            final_marks.append(mark.final_marks)
-            
-            marks_data.append({
-                'subject_name': mark.subject.name,
-                'subject_code': mark.subject.code,
-                'quiz_marks': mark.quiz_marks,
-                'midterm_marks': mark.midterm_marks,
-                'final_marks': mark.final_marks,
-                'total_marks': mark.total_marks,
-                'grade': mark.grade
-            })
-        
-        return render_template(
-            'marks.html',
-            title='Marks & GPA',
-            student=student,
-            marks_data=marks_data,
-            current_gpa=student.gpa,
-            subjects=subjects,
-            quiz_marks=quiz_marks,
-            midterm_marks=midterm_marks,
-            final_marks=final_marks,
-            semesters=semesters,
-            semester_gpas=semester_gpas
-        )
-    else:
-        flash('Only students can access marks', 'warning')
-        return redirect(url_for('dashboard.index'))
+        marks_data.append({
+            'subject_name': mark.subject.name,
+            'subject_code': mark.subject.code,
+            'quiz_marks': mark.quiz_marks,
+            'midterm_marks': mark.midterm_marks,
+            'final_marks': mark.final_marks,
+            'total_marks': mark.total_marks,
+            'grade': mark.grade
+        })
+    
+    return render_template(
+        'marks.html',
+        title='Marks & GPA',
+        student=student,
+        marks_data=marks_data,
+        current_gpa=student.gpa,
+        subjects=subjects,
+        quiz_marks=quiz_marks,
+        midterm_marks=midterm_marks,
+        final_marks=final_marks,
+        semesters=semesters,
+        semester_gpas=semester_gpas
+    )
 
 @dashboard_bp.route('/chat')
 @login_required
+@student_required
 def chat():
     return render_template('chat.html', title='AI Assistant')
 
 @dashboard_bp.route('/api/chat', methods=['POST'])
 @login_required
+@student_required
 def api_chat():
     data = request.get_json()
     
@@ -236,10 +229,8 @@ def api_chat():
 # Admin routes
 @dashboard_bp.route('/admin/students')
 @login_required
+@admin_required
 def admin_students():
-    if current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'danger')
-        return redirect(url_for('dashboard.index'))
     
     students = Student.query.all()
     
@@ -251,10 +242,8 @@ def admin_students():
 
 @dashboard_bp.route('/admin/announcements')
 @login_required
+@admin_required
 def admin_announcements():
-    if current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'danger')
-        return redirect(url_for('dashboard.index'))
     
     announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
     
@@ -266,10 +255,8 @@ def admin_announcements():
 
 @dashboard_bp.route('/admin/attendance')
 @login_required
+@admin_required
 def admin_attendance():
-    if current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'danger')
-        return redirect(url_for('dashboard.index'))
     
     students = Student.query.all()
     
@@ -295,10 +282,8 @@ def admin_attendance():
 
 @dashboard_bp.route('/admin/sync_attendance', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def admin_sync_attendance():
-    if current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'danger')
-        return redirect(url_for('dashboard.index'))
     
     if request.method == 'POST':
         from app.google_sheets_utils import sync_attendance_to_database
@@ -336,9 +321,8 @@ def admin_sync_attendance():
 
 @dashboard_bp.route('/admin/set_spreadsheet_id', methods=['POST'])
 @login_required
+@admin_required
 def admin_set_spreadsheet_id():
-    if current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     data = request.get_json()
     spreadsheet_id = data.get('spreadsheet_id', '').strip()
@@ -359,9 +343,8 @@ def admin_set_spreadsheet_id():
 
 @dashboard_bp.route('/admin/test_sheets_connection', methods=['POST'])
 @login_required
+@admin_required
 def admin_test_sheets_connection():
-    if current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     from app.google_sheets_utils import get_google_sheets_client
     import os
@@ -415,9 +398,8 @@ def admin_test_sheets_connection():
 
 @dashboard_bp.route('/admin/send_alerts', methods=['POST'])
 @login_required
+@admin_required
 def admin_send_alerts():
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     # Get student IDs from request
     data = request.get_json()
@@ -441,10 +423,8 @@ def admin_send_alerts():
 
 @dashboard_bp.route('/admin/marks', methods=['GET'])
 @login_required
+@admin_required
 def admin_marks():
-    if current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'danger')
-        return redirect(url_for('dashboard.index'))
     
     students = Student.query.all()
     subjects = Subject.query.all()
@@ -465,9 +445,8 @@ def admin_marks():
 
 @dashboard_bp.route('/admin/edit_mark', methods=['POST'])
 @login_required
+@admin_required
 def admin_edit_mark():
-    if current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     data = request.get_json()
     mark_id = data.get('mark_id')
@@ -531,9 +510,8 @@ def admin_edit_mark():
 
 @dashboard_bp.route('/admin/delete_mark/<int:mark_id>', methods=['POST'])
 @login_required
+@admin_required
 def admin_delete_mark(mark_id):
-    if current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     mark = Mark.query.get(mark_id)
     if not mark:
@@ -559,9 +537,8 @@ def admin_delete_mark(mark_id):
 
 @dashboard_bp.route('/admin/add_announcement', methods=['POST'])
 @login_required
+@admin_required
 def admin_add_announcement():
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
     title = data.get('title')
