@@ -366,8 +366,32 @@ def admin_test_sheets_connection():
     
     from app.google_sheets_utils import get_google_sheets_client
     from app.models import Settings
+    import os
+    import json
     
     try:
+        # Debug the Google Sheets credentials
+        credentials_json = os.environ.get('GOOGLE_SHEETS_CREDENTIALS')
+        if not credentials_json:
+            return jsonify({
+                'success': False,
+                'message': 'Google Sheets credentials not found in environment variables.'
+            }), 400
+        
+        # Log the first few characters of the credentials (safely)
+        creds_start = credentials_json[:20] + "..." if len(credentials_json) > 20 else credentials_json
+        current_app.logger.info(f"Credentials start with: {creds_start}")
+        
+        # Try to parse the JSON
+        try:
+            creds_dict = json.loads(credentials_json)
+            current_app.logger.info("Successfully parsed credentials JSON")
+        except json.JSONDecodeError as e:
+            return jsonify({
+                'success': False,
+                'message': f'Failed to parse Google Sheets credentials JSON: {str(e)}'
+            }), 400
+        
         # Get the Google Sheets client
         client = get_google_sheets_client()
         
@@ -409,9 +433,18 @@ def admin_test_sheets_connection():
     except Exception as e:
         current_app.logger.error(f"Error testing Google Sheets connection: {str(e)}")
         
+        # Add additional debug information
+        debug_info = {
+            'error_type': type(e).__name__,
+            'has_credentials': bool(os.environ.get('GOOGLE_SHEETS_CREDENTIALS')),
+            'credentials_length': len(os.environ.get('GOOGLE_SHEETS_CREDENTIALS', '')) if os.environ.get('GOOGLE_SHEETS_CREDENTIALS') else 0,
+            'spreadsheet_id': Settings.get('ATTENDANCE_SPREADSHEET_ID', ''),
+        }
+        
         return jsonify({
             'success': False,
-            'message': f'Error connecting to Google Sheets: {str(e)}'
+            'message': f'Error connecting to Google Sheets: {str(e)}',
+            'debugInfo': debug_info
         }), 500
 
 @dashboard_bp.route('/admin/send_alerts', methods=['POST'])

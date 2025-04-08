@@ -153,7 +153,12 @@
                 if (data.success) {
                     alert('Spreadsheet ID saved successfully');
                 } else {
-                    alert('Error: ' + data.message);
+                    let errorMsg = 'Error: ' + data.message;
+                    // Add detailed error information if available
+                    if (data.debugInfo) {
+                        errorMsg += '\n\nDebug Info: ' + JSON.stringify(data.debugInfo);
+                    }
+                    alert(errorMsg);
                 }
             })
             .catch(error => {
@@ -201,7 +206,12 @@
                     
                     alert(message);
                 } else {
-                    alert("Error: " + data.message);
+                    let errorMsg = "Error: " + data.message;
+                    // Add detailed error information if available
+                    if (data.debugInfo) {
+                        errorMsg += "\n\nDebug Info: " + JSON.stringify(data.debugInfo);
+                    }
+                    alert(errorMsg);
                 }
             })
             .catch(error => {
