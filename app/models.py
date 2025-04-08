@@ -96,16 +96,17 @@ class Mark(db.Model):
         self.calculate_grade()
         
     def calculate_grade(self):
+        # Modified grade calculation for 10-point scale (A=10, B=8, C=6, D=4, F=0)
         if self.total_marks >= 90:
-            self.grade = 'A'
-        elif self.total_marks >= 80:
-            self.grade = 'B'
-        elif self.total_marks >= 70:
-            self.grade = 'C'
+            self.grade = 'A'  # 10 points
+        elif self.total_marks >= 75:
+            self.grade = 'B'  # 8 points
         elif self.total_marks >= 60:
-            self.grade = 'D'
+            self.grade = 'C'  # 6 points
+        elif self.total_marks >= 45:
+            self.grade = 'D'  # 4 points
         else:
-            self.grade = 'F'
+            self.grade = 'F'  # 0 points
             
     def __repr__(self):
         return f'<Mark {self.student_id} - {self.subject_id}>'

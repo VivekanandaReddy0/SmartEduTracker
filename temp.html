@@ -1,9 +1,50 @@
-<div class="input-group">
-                                    <input type="text" class="form-control" id="spreadsheetId" placeholder="Enter your Google Sheets Spreadsheet ID" value="{{ spreadsheet_id }}">
-                                    <button class="btn btn-outline-secondary" type="button" id="saveSpreadsheetId">
-                                        <i class="fas fa-save"></i> Save
-                                    </button>
-                                    <button class="btn btn-outline-info" type="button" id="testConnectionBtn">
-                                        <i class="fas fa-plug"></i> Test
-                                    </button>
-                                </div>
+    <!-- Grading Scale Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Grading Scale (10-point scale)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Grade</th>
+                                    <th>Marks Range</th>
+                                    <th>Grade Points</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-success">A</span></td>
+                                    <td>90-100</td>
+                                    <td>10.0</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-primary">B</span></td>
+                                    <td>75-89</td>
+                                    <td>8.0</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning text-dark">C</span></td>
+                                    <td>60-74</td>
+                                    <td>6.0</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning text-dark">D</span></td>
+                                    <td>45-59</td>
+                                    <td>4.0</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-danger">F</span></td>
+                                    <td>Below 45</td>
+                                    <td>0.0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

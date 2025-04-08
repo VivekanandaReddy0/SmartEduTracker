@@ -88,7 +88,7 @@
                 <div class="card-body">
                     <div class="row align-items-center mb-4">
                         <div class="col-md-6 text-center">
-                            <h5>Current GPA</h5>
+                            <h5>Current GPA (10-point scale)</h5>
                             <div class="display-4 fw-bold text-primary">{{ "%.2f"|format(student.gpa) }}</div>
                         </div>
                         <div class="col-md-6">
@@ -220,7 +220,7 @@
         data: {
             labels: ['Current GPA', 'Remaining'],
             datasets: [{
-                data: [{{ student.gpa }}, {{ 4.0 - student.gpa }}],
+                data: [{{ student.gpa }}, {{ 10.0 - student.gpa }}],
                 backgroundColor: [
                     '#4e73df',
                     '#f8f9fc'

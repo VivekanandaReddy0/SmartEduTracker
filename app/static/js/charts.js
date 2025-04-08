@@ -110,9 +110,9 @@ function createGPAChart(canvasId, semesters, gpaData) {
                 y: {
                     beginAtZero: false,
                     min: 0,
-                    max: 4,
+                    max: 10,
                     ticks: {
-                        stepSize: 0.5
+                        stepSize: 1
                     }
                 }
             }

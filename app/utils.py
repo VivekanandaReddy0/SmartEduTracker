@@ -254,16 +254,16 @@ def get_attendance_by_date(attendance_data, days=30):
 
 def calculate_gpa(marks):
     """
-    Calculate GPA from subject marks
+    Calculate GPA from subject marks on a 10-point scale
     """
     if not marks:
         return 0.0
     
     grade_points = {
-        'A': 4.0,
-        'B': 3.0,
-        'C': 2.0,
-        'D': 1.0,
+        'A': 10.0,
+        'B': 8.0,
+        'C': 6.0,
+        'D': 4.0,
         'F': 0.0
     }
     
