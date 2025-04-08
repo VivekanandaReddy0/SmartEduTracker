@@ -48,8 +48,13 @@
                                     <h5 class="card-title">Current GPA (10-point scale)</h5>
                                     <div class="d-flex align-items-center">
                                         <div>
-                                            <h1 class="display-4 mb-0">{{ current_gpa }}</h1>
-                                            <p class="text-muted mb-0">out of 10.0</p>
+                                            {% if current_gpa != 'F' %}
+                                                <h1 class="display-4 mb-0">{{ current_gpa }}</h1>
+                                                <p class="text-muted mb-0">out of 10.0</p>
+                                            {% else %}
+                                                <h1 class="display-4 mb-0 text-danger">F</h1>
+                                                <p class="text-danger mb-0">Fail in one or more subjects</p>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -101,13 +106,13 @@
                                                     <td>6.0</td>
                                                 </tr>
                                                 <tr>
-                                                    <td><span class="badge bg-warning text-dark">D</span></td>
+                                                    <td><span class="badge bg-danger">D</span></td>
                                                     <td>45-59</td>
                                                     <td>4.0</td>
                                                 </tr>
                                                 <tr>
                                                     <td><span class="badge bg-danger">F</span></td>
-                                                    <td>Below 45</td>
+                                                    <td>0-44</td>
                                                     <td>0.0</td>
                                                 </tr>
                                             </tbody>
@@ -118,62 +123,69 @@
                         </div>
                     </div>
                     
-                    <!-- Mark Comparison Chart -->
-                    <div class="card bg-dark text-light mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0">Marks by Subject</h5>
-                        </div>
-                        <div class="card-body">
-                            <div style="height: 250px;">
-                                <canvas id="marksComparisonChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Marks Table -->
-                    <div class="card bg-dark text-light">
-                        <div class="card-header">
-                            <h5 class="mb-0">Detailed Marks</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-dark table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Subject</th>
-                                            <th>Quiz (30%)</th>
-                                            <th>Midterm (30%)</th>
-                                            <th>Final (40%)</th>
-                                            <th>Total</th>
-                                            <th>Grade</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for mark in marks_data %}
-                                        <tr>
-                                            <td>{{ mark.subject_name }} ({{ mark.subject_code }})</td>
-                                            <td>{{ mark.quiz_marks }}</td>
-                                            <td>{{ mark.midterm_marks }}</td>
-                                            <td>{{ mark.final_marks }}</td>
-                                            <td>{{ mark.total_marks }}</td>
-                                            <td>
-                                                <span class="badge 
-                                                    {% if mark.grade in ['A', 'A-'] %}
-                                                        bg-success
-                                                    {% elif mark.grade in ['B+', 'B', 'B-'] %}
-                                                        bg-info
-                                                    {% elif mark.grade in ['C+', 'C', 'C-'] %}
-                                                        bg-warning
-                                                    {% else %}
-                                                        bg-danger
-                                                    {% endif %}">
-                                                    {{ mark.grade }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                    <!-- Subject-wise Marks -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card bg-dark text-light">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i> Subject-wise Marks</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if marks %}
+                                        <div class="table-responsive">
+                                            <table class="table table-dark table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Subject Code</th>
+                                                        <th>Subject Name</th>
+                                                        <th>Quiz (30)</th>
+                                                        <th>Midterm (30)</th>
+                                                        <th>Final (40)</th>
+                                                        <th>Total (100)</th>
+                                                        <th>Grade</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for mark in marks %}
+                                                    <tr>
+                                                        <td>{{ mark.subject.code }}</td>
+                                                        <td>{{ mark.subject.name }}</td>
+                                                        <td>{{ mark.quiz_marks }}</td>
+                                                        <td>{{ mark.midterm_marks }}</td>
+                                                        <td>{{ mark.final_marks }}</td>
+                                                        <td>{{ mark.total_marks }}</td>
+                                                        <td>
+                                                            {% if mark.grade == 'A' %}
+                                                                <span class="badge bg-success">{{ mark.grade }}</span>
+                                                            {% elif mark.grade == 'B' %}
+                                                                <span class="badge bg-primary">{{ mark.grade }}</span>
+                                                            {% elif mark.grade == 'C' %}
+                                                                <span class="badge bg-warning">{{ mark.grade }}</span>
+                                                            {% elif mark.grade == 'D' %}
+                                                                <span class="badge bg-danger">{{ mark.grade }}</span>
+                                                            {% else %}
+                                                                <span class="badge bg-danger">{{ mark.grade }}</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <!-- Marks Comparison Chart -->
+                                        <div class="mt-4">
+                                            <h5>Marks Comparison</h5>
+                                            <div style="height: 300px;">
+                                                <canvas id="marksComparisonChart"></canvas>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle me-2"></i> No marks data available yet.
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -185,23 +197,89 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{{ super() }}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // GPA chart
-        const semesters = {{ semesters|tojson }};
-        const gpaData = {{ semester_gpas|tojson }};
-        
-        createGPAChart('gpaChart', semesters, gpaData);
-        
-        // Marks comparison chart
-        const subjects = {{ subjects|tojson }};
-        const quizData = {{ quiz_marks|tojson }};
-        const midtermData = {{ midterm_marks|tojson }};
-        const finalData = {{ final_marks|tojson }};
-        
-        createMarksComparisonChart('marksComparisonChart', subjects, quizData, midtermData, finalData);
+    // GPA Chart
+    var gpaCtx = document.getElementById('gpaChart').getContext('2d');
+    var gpaData = {{ gpa_chart_data|tojson }};
+    
+    var gpaChartObj = new Chart(gpaCtx, {
+        type: 'line',
+        data: {
+            labels: gpaData.labels,
+            datasets: [{
+                label: 'GPA',
+                data: gpaData.data,
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 3,
+                fill: true
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 10,
+                    ticks: {
+                        stepSize: 2
+                    }
+                }
+            }
+        }
     });
+    
+    {% if marks %}
+    // Marks Comparison Chart
+    var marksCtx = document.getElementById('marksComparisonChart').getContext('2d');
+    var marksData = {{ marks_chart_data|tojson }};
+    
+    var marksChartObj = new Chart(marksCtx, {
+        type: 'bar',
+        data: {
+            labels: marksData.subjects,
+            datasets: [
+                {
+                    label: 'Quiz',
+                    data: marksData.quiz,
+                    backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Midterm',
+                    data: marksData.midterm,
+                    backgroundColor: 'rgba(28, 200, 138, 0.8)',
+                    borderColor: 'rgba(28, 200, 138, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Final',
+                    data: marksData.final,
+                    backgroundColor: 'rgba(246, 194, 62, 0.8)',
+                    borderColor: 'rgba(246, 194, 62, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        stepSize: 20
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
 </script>
 {% endblock %}

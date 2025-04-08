@@ -179,18 +179,30 @@ def marks():
             'grade': mark.grade
         })
     
+    # Prepare chart data
+    gpa_chart_data = {
+        'labels': semesters,
+        'data': semester_gpas
+    }
+    
+    marks_chart_data = {
+        'subjects': subjects,
+        'quiz': quiz_marks,
+        'midterm': midterm_marks,
+        'final': final_marks
+    }
+    
+    # Format GPA for display
+    current_gpa = 'F' if student.gpa is None else f"{student.gpa:.2f}"
+    
     return render_template(
         'marks.html',
         title='Marks & GPA',
         student=student,
-        marks_data=marks_data,
-        current_gpa=student.gpa,
-        subjects=subjects,
-        quiz_marks=quiz_marks,
-        midterm_marks=midterm_marks,
-        final_marks=final_marks,
-        semesters=semesters,
-        semester_gpas=semester_gpas
+        marks=marks,
+        current_gpa=current_gpa,
+        gpa_chart_data=gpa_chart_data,
+        marks_chart_data=marks_chart_data
     )
 
 @dashboard_bp.route('/chat')

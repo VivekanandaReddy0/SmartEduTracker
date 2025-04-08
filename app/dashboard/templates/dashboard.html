@@ -89,7 +89,12 @@
                     <div class="row align-items-center mb-4">
                         <div class="col-md-6 text-center">
                             <h5>Current GPA (10-point scale)</h5>
-                            <div class="display-4 fw-bold text-primary">{{ "%.2f"|format(student.gpa) }}</div>
+                            {% if student.gpa is not none %}
+                                <div class="display-4 fw-bold text-primary">{{ "%.2f"|format(student.gpa) }}</div>
+                            {% else %}
+                                <div class="display-4 fw-bold text-danger">F</div>
+                                <div class="small text-danger">Fail in one or more subjects</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-6">
                             <canvas id="gpaChart" width="200" height="200"></canvas>
@@ -118,9 +123,9 @@
                                                 {% elif mark.grade == 'B' %}
                                                     <span class="badge bg-primary">{{ mark.grade }}</span>
                                                 {% elif mark.grade == 'C' %}
-                                                    <span class="badge bg-warning">{{ mark.grade }}</span>
+                                                    <span class="badge bg-info">{{ mark.grade }}</span>
                                                 {% elif mark.grade == 'D' %}
-                                                    <span class="badge bg-warning text-dark">{{ mark.grade }}</span>
+                                                    <span class="badge bg-warning">{{ mark.grade }}</span>
                                                 {% else %}
                                                     <span class="badge bg-danger">{{ mark.grade }}</span>
                                                 {% endif %}
@@ -140,25 +145,27 @@
         </div>
     </div>
 
+    <!-- Announcements Card -->
     <div class="row">
-        <!-- Announcements Card -->
-        <div class="col-lg-8">
+        <div class="col-12">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold"><i class="fas fa-bullhorn me-2"></i>Announcements</h6>
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-bullhorn me-2"></i>Latest Announcements</h6>
                 </div>
                 <div class="card-body">
                     {% if announcements %}
-                        {% for announcement in announcements %}
-                            <div class="announcement mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
-                                <h5 class="fw-bold">{{ announcement.title }}</h5>
-                                <p>{{ announcement.content }}</p>
-                                <div class="small text-muted">
-                                    Posted by {{ announcement.admin.first_name }} {{ announcement.admin.last_name }} 
-                                    on {{ announcement.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                        <div class="list-group">
+                            {% for announcement in announcements %}
+                                <div class="list-group-item list-group-item-action flex-column align-items-start">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ announcement.title }}</h5>
+                                        <small class="text-muted">{{ announcement.created_at.strftime('%d %b %Y') }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ announcement.content }}</p>
+                                    <small class="text-muted">By {{ announcement.admin.first_name }} {{ announcement.admin.last_name }}</small>
                                 </div>
-                            </div>
-                        {% endfor %}
+                            {% endfor %}
+                        </div>
                     {% else %}
                         <div class="alert alert-info mb-0">
                             <i class="fas fa-info-circle me-2"></i>No announcements available.
@@ -167,62 +174,33 @@
                 </div>
             </div>
         </div>
-
-        <!-- Quick Links Card -->
-        <div class="col-lg-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold"><i class="fas fa-link me-2"></i>Quick Links</h6>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        <a href="{{ url_for('dashboard.profile') }}" class="list-group-item list-group-item-action">
-                            <i class="fas fa-user me-2"></i>View Profile
-                        </a>
-                        <a href="{{ url_for('dashboard.attendance') }}" class="list-group-item list-group-item-action">
-                            <i class="fas fa-calendar-check me-2"></i>Detailed Attendance
-                        </a>
-                        <a href="{{ url_for('dashboard.marks') }}" class="list-group-item list-group-item-action">
-                            <i class="fas fa-chart-bar me-2"></i>Detailed Marks
-                        </a>
-                        <a href="{{ url_for('dashboard.chat') }}" class="list-group-item list-group-item-action">
-                            <i class="fas fa-robot me-2"></i>AI Assistant
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- AI Assistant Card -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-primary text-white">
-                    <h6 class="m-0 font-weight-bold"><i class="fas fa-robot me-2"></i>Ask AI Assistant</h6>
-                </div>
-                <div class="card-body">
-                    <p class="mb-3">Need help with anything? Ask our AI assistant!</p>
-                    <div class="d-grid">
-                        <a href="{{ url_for('dashboard.chat') }}" class="btn btn-primary">
-                            <i class="fas fa-comments me-2"></i>Start Chatting
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
+{% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ super() }}
 <script>
-    // GPA Chart
+    // GPA Doughnut Chart
     var ctx = document.getElementById('gpaChart').getContext('2d');
+    {% if student.gpa is not none %}
+        var gpaValue = {{ student.gpa }};
+        var remainingValue = {{ 10.0 - student.gpa }};
+        var chartColor = '#4e73df';
+    {% else %}
+        var gpaValue = 0;
+        var remainingValue = 10.0;
+        var chartColor = '#e74a3b';
+    {% endif %}
+    
     var gpaChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['Current GPA', 'Remaining'],
             datasets: [{
-                data: [{{ student.gpa }}, {{ 10.0 - student.gpa }}],
+                data: [gpaValue, remainingValue],
                 backgroundColor: [
-                    '#4e73df',
+                    chartColor,
                     '#f8f9fc'
                 ],
                 borderWidth: 0
@@ -239,5 +217,4 @@
         }
     });
 </script>
-{% endblock %}
 {% endblock %}

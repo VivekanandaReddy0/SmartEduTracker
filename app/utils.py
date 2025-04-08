@@ -280,7 +280,8 @@ def get_attendance_by_date(attendance_data, days=30):
 
 def calculate_gpa(marks):
     """
-    Calculate GPA from subject marks on a 10-point scale
+    Calculate GPA from subject marks on a 10-point scale.
+    Returns None if a student fails any subject (grade 'F').
     """
     if not marks:
         return 0.0
@@ -292,6 +293,11 @@ def calculate_gpa(marks):
         'D': 4.0,
         'F': 0.0
     }
+    
+    # Check if student has failed any subject
+    for mark in marks:
+        if mark.grade == 'F':
+            return None  # Return None if student failed any subject
     
     total_points = 0
     total_credits = 0
