@@ -8,9 +8,8 @@ from app.models import Attendance, Subject
 from flask_login import current_user
 from functools import wraps
 
-# Configuration for Google Sheets
-SPREADSHEET_ID = os.environ.get('ATTENDANCE_SPREADSHEET_ID', '')
-USE_GOOGLE_SHEETS = bool(SPREADSHEET_ID)
+# Configuration for Google Sheets - will be retrieved from database
+USE_GOOGLE_SHEETS = True  # Default to True, actual usage depends on spreadsheet ID being set
 
 def admin_required(f):
     """
@@ -48,13 +47,17 @@ def fetch_attendance_from_google_sheets(student_id):
     """
     try:
         from app.google_sheets_utils import get_attendance_from_sheets
+        from app.models import Settings
         
-        if not SPREADSHEET_ID:
-            current_app.logger.error("ATTENDANCE_SPREADSHEET_ID not set")
+        # Get spreadsheet ID from settings
+        spreadsheet_id = Settings.get('ATTENDANCE_SPREADSHEET_ID', '')
+        
+        if not spreadsheet_id:
+            current_app.logger.error("ATTENDANCE_SPREADSHEET_ID not set in database settings")
             return {'error': 'Google Sheets spreadsheet ID not configured'}, False
             
         # Get all attendance records from the sheet
-        all_records = get_attendance_from_sheets(SPREADSHEET_ID)
+        all_records = get_attendance_from_sheets(spreadsheet_id)
         
         if all_records is None:
             return {'error': 'Failed to get data from Google Sheets'}, False
@@ -103,7 +106,7 @@ def fetch_attendance_data(student_id, use_google_sheets=None):
         tuple: (attendance_data, success)
     """
     try:
-        from app.models import Student, Attendance, Subject
+        from app.models import Student, Attendance, Subject, Settings
         
         # Get the student object from student_id string
         student = Student.query.filter_by(student_id=student_id).first()
@@ -111,10 +114,13 @@ def fetch_attendance_data(student_id, use_google_sheets=None):
         if not student:
             return {'error': 'Student not found'}, False
         
+        # Get spreadsheet ID from settings
+        spreadsheet_id = Settings.get('ATTENDANCE_SPREADSHEET_ID', '')
+        
         # Determine if we should use Google Sheets
         use_sheets = USE_GOOGLE_SHEETS if use_google_sheets is None else use_google_sheets
         
-        if use_sheets and SPREADSHEET_ID:
+        if use_sheets and spreadsheet_id:
             return fetch_attendance_from_google_sheets(student_id)
         
         # Fall back to database

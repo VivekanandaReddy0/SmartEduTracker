@@ -136,3 +136,31 @@ class ChatHistory(db.Model):
     
     def __repr__(self):
         return f'<ChatHistory {self.user_id} - {self.created_at}>'
+
+class Settings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    @classmethod
+    def get(cls, key, default=None):
+        """Get a setting value by key"""
+        setting = cls.query.filter_by(key=key).first()
+        return setting.value if setting else default
+        
+    @classmethod
+    def set(cls, key, value):
+        """Set a setting value by key"""
+        setting = cls.query.filter_by(key=key).first()
+        if setting:
+            setting.value = value
+        else:
+            setting = cls(key=key, value=value)
+            db.session.add(setting)
+        db.session.commit()
+        return setting
+    
+    def __repr__(self):
+        return f'<Settings {self.key}>'

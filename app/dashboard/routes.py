@@ -307,9 +307,9 @@ def admin_sync_attendance():
     
     if request.method == 'POST':
         from app.google_sheets_utils import sync_attendance_to_database
-        import os
+        from app.models import Settings
         
-        spreadsheet_id = os.environ.get('ATTENDANCE_SPREADSHEET_ID', '')
+        spreadsheet_id = Settings.get('ATTENDANCE_SPREADSHEET_ID', '')
         
         if not spreadsheet_id:
             if request.is_json:
@@ -330,8 +330,8 @@ def admin_sync_attendance():
         return redirect(url_for('dashboard.admin_attendance'))
     
     # GET request - show the sync page
-    import os
-    spreadsheet_id = os.environ.get('ATTENDANCE_SPREADSHEET_ID', '')
+    from app.models import Settings
+    spreadsheet_id = Settings.get('ATTENDANCE_SPREADSHEET_ID', '')
     
     return render_template(
         'admin_sync_attendance.html',
@@ -350,11 +350,9 @@ def admin_set_spreadsheet_id():
     if not spreadsheet_id:
         return jsonify({'success': False, 'message': 'Spreadsheet ID is required'}), 400
     
-    # In a real production application, we would store this in the database
-    # or in environment variables that persist between app restarts
-    # For this demo, we'll use an environment variable that lasts for the current session
-    import os
-    os.environ['ATTENDANCE_SPREADSHEET_ID'] = spreadsheet_id
+    # Store the spreadsheet ID in the database
+    from app.models import Settings
+    Settings.set('ATTENDANCE_SPREADSHEET_ID', spreadsheet_id)
     
     return jsonify({
         'success': True,
@@ -367,7 +365,7 @@ def admin_set_spreadsheet_id():
 def admin_test_sheets_connection():
     
     from app.google_sheets_utils import get_google_sheets_client
-    import os
+    from app.models import Settings
     
     try:
         # Get the Google Sheets client
@@ -379,8 +377,8 @@ def admin_test_sheets_connection():
                 'message': 'Failed to create Google Sheets client. Check your credentials.'
             }), 400
             
-        # Get the spreadsheet ID
-        spreadsheet_id = os.environ.get('ATTENDANCE_SPREADSHEET_ID', '')
+        # Get the spreadsheet ID from settings
+        spreadsheet_id = Settings.get('ATTENDANCE_SPREADSHEET_ID', '')
         
         if not spreadsheet_id:
             return jsonify({
