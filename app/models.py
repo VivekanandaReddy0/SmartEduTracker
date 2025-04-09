@@ -37,9 +37,61 @@ class Student(db.Model):
     semester = db.Column(db.Integer, nullable=False)
     program = db.Column(db.String(100), nullable=False)
     gpa = db.Column(db.Float, default=0.0)
+    profile_photo = db.Column(db.LargeBinary, nullable=True)  # Optimized binary photo data
+    photo_mimetype = db.Column(db.String(64), nullable=True)  # Store the image MIME type
     
     # Relationships
     attendances = db.relationship('Attendance', backref='student', lazy=True, cascade='all, delete-orphan')
+    
+    def set_profile_photo(self, photo_data, mimetype, max_size=(300, 300), quality=80):
+        """
+        Set optimized profile photo with reduced data usage
+        
+        Args:
+            photo_data: The binary photo data
+            mimetype: The MIME type of the image (e.g., 'image/jpeg', 'image/png')
+            max_size: Maximum dimensions (width, height) to resize the image to
+            quality: JPEG compression quality (0-100)
+        """
+        try:
+            from PIL import Image
+            import io
+            
+            # Create an image from binary data
+            img = Image.open(io.BytesIO(photo_data))
+            
+            # Convert to RGB if PNG or other format with alpha channel
+            if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                background.paste(img, mask=img.split()[3] if img.mode == 'RGBA' else None)
+                img = background
+            
+            # Resize the image to reduce size while maintaining aspect ratio
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            # Save to bytes with compression
+            output = io.BytesIO()
+            img.save(output, format='JPEG', quality=quality, optimize=True)
+            
+            # Store the optimized image
+            self.profile_photo = output.getvalue()
+            self.photo_mimetype = 'image/jpeg'  # Always save as JPEG for optimal compression
+            
+            return True
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def get_profile_photo_url(self):
+        """
+        Get a data URL for the profile photo if it exists
+        """
+        if self.profile_photo and self.photo_mimetype:
+            import base64
+            encoded = base64.b64encode(self.profile_photo).decode('utf-8')
+            return f"data:{self.photo_mimetype};base64,{encoded}"
+        return None
     
     def __repr__(self):
         return f'<Student {self.first_name} {self.last_name}>'

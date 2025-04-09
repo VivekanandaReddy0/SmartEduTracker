@@ -85,11 +85,30 @@ def index():
         flash('Unknown user role', 'danger')
         return redirect(url_for('index'))
 
-@dashboard_bp.route('/profile')
+@dashboard_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
 @student_required
 def profile():
     student = current_user.student
+    
+    if request.method == 'POST' and 'profile_photo' in request.files:
+        # Handle photo upload
+        photo_file = request.files['profile_photo']
+        
+        if photo_file and photo_file.filename:
+            try:
+                # Get the photo data and MIME type
+                photo_data = photo_file.read()
+                mimetype = photo_file.mimetype
+                
+                # Save the photo with optimization to reduce data usage
+                if student.set_profile_photo(photo_data, mimetype):
+                    db.session.commit()
+                    flash('Profile photo updated successfully!', 'success')
+                else:
+                    flash('Error processing the uploaded image.', 'danger')
+            except Exception as e:
+                flash(f'Error uploading profile photo: {str(e)}', 'danger')
     
     # Get marks data
     marks = Mark.query.filter_by(student_id=student.id).all()
