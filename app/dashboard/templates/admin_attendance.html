@@ -89,12 +89,72 @@
             
             <!-- Attendance Records -->
             <div class="card bg-dark text-light">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> Attendance Records</h5>
-                    <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addAttendanceModal">
-                        <i class="fas fa-plus me-2"></i> Add Record
-                    </button>
+                <div class="card-header bg-primary text-white">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link active text-white" data-bs-toggle="tab" href="#todayAttendance">
+                                <i class="fas fa-clock me-2"></i>Today's Attendance
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" data-bs-toggle="tab" href="#allRecords">
+                                <i class="fas fa-calendar-alt me-2"></i>All Records
+                            </a>
+                        </li>
+                    </ul>
                 </div>
+                <div class="card-body tab-content">
+                    <!-- Today's Attendance Tab -->
+                    <div class="tab-pane fade show active" id="todayAttendance">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover" id="todayAttendanceTable">
+                                <thead>
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Name</th>
+                                        <th>Subject</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students %}
+                                    <tr>
+                                        <td>{{ student.student_id }}</td>
+                                        <td>{{ student.first_name }} {{ student.last_name }}</td>
+                                        <td>
+                                            <select class="form-select form-select-sm subject-select" data-student-id="{{ student.id }}">
+                                                <option value="">Select Subject</option>
+                                                {% for subject in subjects %}
+                                                <option value="{{ subject.id }}">{{ subject.name }} ({{ subject.code }})</option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm status-select" data-student-id="{{ student.id }}">
+                                                <option value="present">Present</option>
+                                                <option value="absent">Absent</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-success save-attendance" data-student-id="{{ student.id }}">
+                                                <i class="fas fa-save"></i> Save
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- All Records Tab -->
+                    <div class="tab-pane fade" id="allRecords">
+                        <div class="d-flex justify-content-end mb-3">
+                            <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addAttendanceModal">
+                                <i class="fas fa-plus me-2"></i> Add Record
+                            </button>
+                        </div>
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-4">
@@ -253,6 +313,50 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Today's attendance handling
+        document.querySelectorAll('.save-attendance').forEach(button => {
+            button.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-student-id');
+                const row = this.closest('tr');
+                const subjectId = row.querySelector('.subject-select').value;
+                const status = row.querySelector('.status-select').value;
+                
+                if (!subjectId) {
+                    alert('Please select a subject');
+                    return;
+                }
+                
+                fetch('/dashboard/admin/add_attendance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        student_id: studentId,
+                        subject_id: subjectId,
+                        date: new Date().toISOString().split('T')[0],
+                        status: status === 'present'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Attendance saved successfully!');
+                        button.classList.add('btn-success');
+                        button.classList.remove('btn-primary');
+                        setTimeout(() => {
+                            button.classList.remove('btn-success');
+                            button.classList.add('btn-primary');
+                        }, 2000);
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
+                });
+            });
+        });
         // Select all checkbox functionality
         document.getElementById('selectAllCheckbox').addEventListener('change', function() {
             const checkboxes = document.querySelectorAll('.student-checkbox');
