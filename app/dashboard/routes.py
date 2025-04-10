@@ -314,6 +314,7 @@ def admin_announcements():
 def admin_attendance():
     
     students = Student.query.all()
+    subjects = Subject.query.all()  # Get all subjects
     
     # Get list of students with low attendance
     low_attendance_students = []
@@ -332,6 +333,7 @@ def admin_attendance():
         'admin_attendance.html',
         title='Attendance Management',
         students=students,
+        subjects=subjects,
         low_attendance_students=low_attendance_students
     )
 
