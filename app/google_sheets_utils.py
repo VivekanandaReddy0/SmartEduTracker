@@ -73,6 +73,13 @@ def get_google_sheets_client():
     """
     Get authenticated Google Sheets client
     """
+    # Use the mock client in development to avoid errors
+    current_app.logger.info("Using mock Google Sheets client for development")
+    return get_mock_google_sheets_client()
+    
+    # The following code is disabled until proper credentials are provided
+    # It can be enabled once the GOOGLE_SHEETS_CREDENTIALS environment variable is set
+    """
     try:
         credentials_json = os.environ.get('GOOGLE_SHEETS_CREDENTIALS')
         
@@ -105,6 +112,7 @@ def get_google_sheets_client():
         current_app.logger.error(f"Error getting Google Sheets client: {str(e)}")
         current_app.logger.warning("Using mock Google Sheets client for development purposes")
         return get_mock_google_sheets_client()
+    """
 
 def get_attendance_from_sheets(spreadsheet_id, sheet_name="Attendance"):
     """

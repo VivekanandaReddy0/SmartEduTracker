@@ -168,7 +168,14 @@ def calculate_attendance_percentage(attendance_data):
 
     for record in attendance_data:
         subject = record.get('subject')
-        status = record.get('status', '').lower() == 'present'
+        
+        # Handle both boolean and string status values
+        status_value = record.get('status', '')
+        if isinstance(status_value, bool):
+            status = status_value  # Use the boolean value directly
+        else:
+            # Handle string values like 'present' or 'absent'
+            status = str(status_value).lower() == 'present'
 
         if subject not in subject_attendance:
             subject_attendance[subject] = {'present': 0, 'total': 0}
@@ -282,17 +289,23 @@ def get_attendance_by_date(attendance_data, days=30):
         date_data[date_str] = {'present': 0, 'absent': 0}
 
     for record in attendance_data:
-        record_date = datetime.strptime(record.get('date'), '%Y-%m-%d').date()
-        date_str = record_date.strftime('%Y-%m-%d')
-
-        if record_date >= start_date and record_date <= today and date_str in date_data:
-            # Handle both boolean and string status values
-            status_value = record.get('status')
-            status = status_value if isinstance(status_value, bool) else str(status_value).lower() == 'present'
-            if status:
-                date_data[date_str]['present'] += 1
-            else:
-                date_data[date_str]['absent'] += 1
+        # First, handle the date conversion safely
+        date_str_from_record = record.get('date')
+        try:
+            record_date = datetime.strptime(date_str_from_record, '%Y-%m-%d').date()
+            date_str = record_date.strftime('%Y-%m-%d')
+            
+            if record_date >= start_date and record_date <= today and date_str in date_data:
+                # Handle both boolean and string status values
+                status_value = record.get('status')
+                status = status_value if isinstance(status_value, bool) else str(status_value).lower() == 'present'
+                if status:
+                    date_data[date_str]['present'] += 1
+                else:
+                    date_data[date_str]['absent'] += 1
+        except (ValueError, TypeError):
+            # Skip records with invalid dates
+            continue
 
     return date_data
 
