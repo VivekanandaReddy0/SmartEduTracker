@@ -484,6 +484,26 @@ def admin_test_sheets_connection():
             'debugInfo': debug_info
         }), 500
 
+@dashboard_bp.route('/admin/add_attendance', methods=['POST'])
+@login_required
+@admin_required
+def admin_add_attendance():
+    data = request.get_json()
+    
+    try:
+        attendance = Attendance(
+            student_id=data['student_id'],
+            subject_id=data['subject_id'],
+            date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
+            status=data['status']
+        )
+        db.session.add(attendance)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Attendance record added successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @dashboard_bp.route('/admin/send_alerts', methods=['POST'])
 @login_required
 @admin_required

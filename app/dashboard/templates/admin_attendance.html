@@ -364,14 +364,34 @@
                 alert('Please fill in all fields');
                 return;
             }
-            
-            // In a real application, you would send this data to the server
-            alert('Attendance record added successfully!');
-            
-            // Close modal and reload page
-            const modal = bootstrap.Modal.getInstance(document.getElementById('addAttendanceModal'));
-            modal.hide();
-            location.reload();
+
+            // Send data to server
+            fetch('/dashboard/admin/add_attendance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    student_id: studentId,
+                    subject_id: subjectId,
+                    date: date,
+                    status: status === 'present'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Attendance record added successfully!');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addAttendanceModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
         });
     });
 </script>
