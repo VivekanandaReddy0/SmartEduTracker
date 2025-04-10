@@ -120,6 +120,11 @@ def get_attendance_from_sheets(spreadsheet_id, sheet_name="Attendance"):
         client = get_google_sheets_client()
         
         if not client:
+            current_app.logger.error("Failed to get Google Sheets client")
+            return None
+            
+        if not spreadsheet_id:
+            current_app.logger.error("No spreadsheet ID provided")
             return None
             
         # Open the spreadsheet

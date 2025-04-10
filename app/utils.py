@@ -105,6 +105,16 @@ def fetch_attendance_data(student_id, use_google_sheets=None):
     Returns:
         tuple: (attendance_data, success)
     """
+    from app.models import Settings
+    
+    # Get spreadsheet ID from settings
+    spreadsheet_id = Settings.get('ATTENDANCE_SPREADSHEET_ID', '')
+    
+    if use_google_sheets and spreadsheet_id:
+        from app.google_sheets_utils import get_attendance_from_sheets
+        attendance_data = get_attendance_from_sheets(spreadsheet_id)
+        if attendance_data is not None:
+            return attendance_data, True
     try:
         from app.models import Student, Attendance, Subject, Settings
         

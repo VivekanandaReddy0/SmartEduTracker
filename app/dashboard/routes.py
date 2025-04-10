@@ -126,8 +126,8 @@ def profile():
 def attendance():
     student = current_user.student
     
-    # Fetch attendance data
-    attendance_data, success = fetch_attendance_data(student.student_id)
+    # Fetch attendance data from Google Sheets
+    attendance_data, success = fetch_attendance_data(student.student_id, use_google_sheets=True)
     attendance_stats = {}
     attendance_records = []
     subject_names = []
@@ -136,6 +136,10 @@ def attendance():
     attendance_present = []
     attendance_absent = []
     overall_percentage = 0
+
+    if not success:
+        flash('Error fetching attendance data. Please try again later.', 'danger')
+        return redirect(url_for('dashboard.index'))
     
     if success:
         attendance_stats = calculate_attendance_percentage(attendance_data)
