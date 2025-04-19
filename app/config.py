@@ -5,14 +5,14 @@ DEBUG = True
 TESTING = False
 
 # Database
+# Always use the Replit-provided PostgreSQL database
 database_url = os.environ.get('DATABASE_URL')
-if database_url:
+if database_url and database_url.startswith('postgres://'):
     # Handle special case for postgres:// URLs
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    SQLALCHEMY_DATABASE_URI = database_url
-else:
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///smartedu.db'
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+# Use the Replit database or fallback to SQLite for local development
+SQLALCHEMY_DATABASE_URI = database_url or 'sqlite:///smartedu.db'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQLALCHEMY_ENGINE_OPTIONS = {
     "pool_recycle": 300,

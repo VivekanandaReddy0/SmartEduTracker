@@ -43,8 +43,26 @@ def create_app():
     
     # Create database tables
     with app.app_context():
-        from app.models import User, Student, Admin, Attendance, Announcement
-        db.create_all()
+        from app.models import User, Student, Admin, Subject, Mark, Attendance, Announcement, ChatHistory, Settings
+        
+        # Log database info for debugging
+        app.logger.info(f"Using database: {app.config['SQLALCHEMY_DATABASE_URI']}")
+        
+        try:
+            # Create all tables
+            db.create_all()
+            app.logger.info("Database tables created successfully")
+        except Exception as e:
+            app.logger.error(f"Error creating database tables: {str(e)}")
+            
+            # If there was an error creating tables, try to connect to the database
+            try:
+                from sqlalchemy import inspect
+                inspector = inspect(db.engine)
+                existing_tables = inspector.get_table_names()
+                app.logger.info(f"Existing tables in database: {existing_tables}")
+            except Exception as db_err:
+                app.logger.error(f"Error inspecting database: {str(db_err)}")
     
     @app.route('/')
     def index():
